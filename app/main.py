@@ -1,47 +1,34 @@
 from datetime import datetime
 
-from app.models.job import Job
+from app.config import load_config, load_companies
 from app.validation.job_validator import JobValidator
 from app.etl.transform import jobs_to_dataframe
 from app.etl.export import export_to_excel
-
+from app.sources.greenhouse_source import GreenhouseSource
 
 def main():
 
     print("Starting ajsclient...")
 
-    config = {
-        "excluded_terms": [
-            "TS/SCI",
-            "Top Secret",
-            "Secret clearance",
-            "sponsorship required",
-            "visa sponsorship"
-        ]
-    }
+    config = load_config()
+    companies = load_companies()
 
-    jobs = [
-        Job(
-            company="Example Company",
-            title="Senior .NET Developer",
-            location="Melbourne, FL",
-            posting_url="https://example.com/job/1",
-            description="C# .NET SQL Server REST API",
-            posting_date=datetime.now(),
-            salary="$135,000 - $145,000",
-            source="Test"
-        ),
-        Job(
-            company="Example Defense Company",
-            title="Software Engineer",
-            location="Melbourne, FL",
-            posting_url="https://example.com/job/2",
-            description="C# .NET Active TS/SCI clearance required",
-            posting_date=datetime.now(),
-            salary="$140,000",
-            source="Test"
+    jobs = []
+
+    for company in companies.get("greenhouse", []):
+
+        source = GreenhouseSource(
+            company_name=company["name"],
+            board_token=company["board_token"],
+            posting_age_days=config["posting_age_days"]
         )
-    ]
+
+        # source = GreenhouseSource(
+        #     company_name=company["name"],
+        #     board_token=company["board_token"]
+        # )
+
+        jobs.extend(source.search())
 
     validator = JobValidator(config)
 

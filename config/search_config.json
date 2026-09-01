@@ -12,7 +12,32 @@
     ],
     "location": {
         "zip_code": "32940",
-        "radius_miles": 35
+        "radius_miles": 35,
+        "accepted_locations": [
+            "Melbourne, FL",
+            "Viera, FL",
+            "Viera West, FL",
+            "Viera East, FL",
+            "Palm Shores, FL",
+            "West Melbourne, FL",
+            "Palm Bay, FL",
+            "Indialantic, FL",
+            "Indian Harbour Beach, FL",
+            "Satellite Beach, FL",
+            "South Patrick Shores, FL",
+            "Malabar, FL",
+            "Rockledge, FL",
+            "Grant-Valkaria, FL",
+            "Melbourne Beach, FL",
+            "Cocoa Beach, FL",
+            "Cocoa, FL",
+            "Cocoa West, FL",
+            "Merritt Island, FL",
+            "Cape Canaveral, FL"
+        ],
+        "excluded_locations": [
+            "Orlando, FL"
+        ]
     },
     "remote": true,
     "country": "United States",
@@ -51,8 +76,28 @@
         "Git",
         "GitHub",
         "CI/CD",
-        "Python",
-        "React",
         "Node"
-    ]
+    ],
+    "technology_weights": {
+        "C#": 10,
+        ".NET": 10,
+        "ASP.NET": 9,
+        "ASP.NET Core": 10,
+        "SQL Server": 8,
+        "REST API": 7,
+        "Web API": 7,
+        "Angular": 6,
+        "React": 6,
+        "TypeScript": 6,
+        "JavaScript": 5,
+        "Python": 3,
+        "Docker": 5,
+        "Kubernetes": 5,
+        "Azure": 6,
+        "Azure DevOps": 6,
+        "Git": 4,
+        "GitHub": 4,
+        "CI/CD": 5,
+        "Node": 4
+    }
 }
