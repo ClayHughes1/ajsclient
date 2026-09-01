@@ -1,0 +1,58 @@
+{
+    "search_terms": [
+        ".NET Developer",
+        ".NET Engineer",
+        "C# Developer",
+        "C# Engineer",
+        "Software Engineer",
+        "Software Developer",
+        "Test Automation Engineer",
+        "SDET",
+        "QA Automation Engineer"
+    ],
+    "location": {
+        "zip_code": "32940",
+        "radius_miles": 35
+    },
+    "remote": true,
+    "country": "United States",
+    "posting_age_days": 2,
+    "salary_minimum": 135000,
+    "excluded_terms": [
+        "TS/SCI",
+        "TS SCI",
+        "Top Secret",
+        "Top Secret/SCI",
+        "Secret clearance",
+        "security clearance required",
+        "clearance required",
+        "clearance: secret",
+        "sponsorship required",
+        "visa sponsorship",
+        "will sponsor"
+    ],
+    "preferred_technologies": [
+        "C#",
+        ".NET",
+        "ASP.NET",
+        "ASP.NET Core",
+        "SQL Server",
+        "REST API",
+        "Web API",
+        "Angular",
+        "React",
+        "TypeScript",
+        "JavaScript",
+        "Python",
+        "Docker",
+        "Kubernetes",
+        "Azure",
+        "Azure DevOps",
+        "Git",
+        "GitHub",
+        "CI/CD",
+        "Python",
+        "React",
+        "Node"
+    ]
+}
