@@ -74,19 +74,26 @@ class JobValidator:
 
         job_location = job.location.lower().strip()
 
-        # Remote jobs are accepted when remote searching is enabled
+        # Remote jobs are accepted only when the location
+        # explicitly indicates United States remote work.
         if self.config.get("remote", False):
 
-            remote_terms = [
-                "remote",
-                "work from home",
+            remote_us_terms = [
+                "remote - usa",
                 "remote - united states",
-                "remote, united states"
+                "remote, usa",
+                "remote, united states",
+                "remote, us",
+                "remote, u.s.",
+                "us-remote",
+                "usa-remote",
+                "united states-remote",
+                "remote united states"
             ]
 
             if any(
                 term in job_location
-                for term in remote_terms
+                for term in remote_us_terms
             ):
                 return True, ""
 
