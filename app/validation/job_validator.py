@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 import re
 
 
@@ -39,6 +39,18 @@ class JobValidator:
         # ---------------------------------------------------------
         # 2. Posting age
         # ---------------------------------------------------------
+        #
+        # IMPORTANT:
+        #
+        # A missing posting date is allowed.
+        #
+        # If SerpApi returns posting_date=None, the job is allowed
+        # to continue through validation. We do NOT reject it merely
+        # because the posting date is unavailable.
+        #
+        # If a posting date IS available, however, it must satisfy
+        # the configured posting_age_days requirement.
+        # ---------------------------------------------------------
 
         posting_age_days = self.config.get(
             "posting_age_days"
@@ -46,28 +58,79 @@ class JobValidator:
 
         if posting_age_days is not None:
 
-            if not job.posting_date:
-                return False, "Missing posting date"
-
-            now = datetime.now(timezone.utc)
-
             posting_date = job.posting_date
 
-            if posting_date.tzinfo is None:
-                posting_date = posting_date.replace(
-                    tzinfo=timezone.utc
+            # -----------------------------------------------------
+            # Missing posting date:
+            #
+            # Let the job slide.
+            #
+            # The absence of a posting date is NOT considered a
+            # validation failure.
+            # -----------------------------------------------------
+
+            if posting_date is None:
+                pass
+
+            # -----------------------------------------------------
+            # Handle datetime values.
+            # -----------------------------------------------------
+
+            elif isinstance(posting_date, datetime):
+
+                if posting_date.tzinfo is None:
+
+                    posting_date = posting_date.replace(
+                        tzinfo=timezone.utc
+                    )
+
+                now = datetime.now(timezone.utc)
+
+                cutoff_date = (
+                    now
+                    - timedelta(days=posting_age_days)
                 )
 
-            cutoff_date = (
-                now - timedelta(days=posting_age_days)
-            )
+                if posting_date < cutoff_date:
 
-            if posting_date < cutoff_date:
+                    return False, (
+                        f"Posting older than "
+                        f"{posting_age_days} days"
+                    )
 
-                return False, (
-                    f"Posting older than "
-                    f"{posting_age_days} days"
+            # -----------------------------------------------------
+            # Handle date values.
+            #
+            # SerpApiSource converts values such as:
+            #
+            # "today"
+            # "1 day ago"
+            # "2 days ago"
+            #
+            # into datetime.date objects.
+            # -----------------------------------------------------
+
+            elif isinstance(posting_date, date):
+
+                cutoff_date = (
+                    date.today()
+                    - timedelta(days=posting_age_days)
                 )
+
+                if posting_date < cutoff_date:
+
+                    return False, (
+                        f"Posting older than "
+                        f"{posting_age_days} days"
+                    )
+
+            # -----------------------------------------------------
+            # Unknown / invalid posting date type.
+            # -----------------------------------------------------
+
+            else:
+
+                return False, "Invalid posting date"
 
         # ---------------------------------------------------------
         # 3. Negative / exclusion match
@@ -219,10 +282,6 @@ class JobValidator:
                     technology
                 )
 
-                # -------------------------------------------------
-                # Technology Score still uses configured weights.
-                # -------------------------------------------------
-
                 weight = technology_weights.get(
                     technology,
                     0
@@ -262,11 +321,6 @@ class JobValidator:
                 2
             )
 
-        print("Preferred Technologies:", preferred_technologies)
-        print("Matched Technologies:", matched_technologies)
-        print("Total Preferred:", total_preferred)
-        print("Technology Percentage:", technology_percentage)
-
         return (
             score,
             matched_technologies,
@@ -299,12 +353,8 @@ class JobValidator:
         }
 
         # ---------------------------------------------------------
-        # IMPORTANT:
-        #
-        # The incompatible technology definitions come directly
+        # Incompatible technology definitions come directly
         # from search_criteria.json.
-        #
-        # There is NO hard-coded technology blacklist here.
         # ---------------------------------------------------------
 
         incompatible_technologies = self.config.get(
@@ -440,17 +490,6 @@ class JobValidator:
             for technology, aliases in (
                 incompatible_technologies.items()
             ):
-
-                # -------------------------------------------------
-                # The canonical technology itself is also checked.
-                #
-                # This allows:
-                #
-                # "Java"
-                #
-                # even if an alias list doesn't explicitly contain
-                # "java".
-                # -------------------------------------------------
 
                 patterns_to_check = [
                     technology
