@@ -100,6 +100,20 @@
             "name": "SoFi",
             "board_token": "sofi"
         }
+    ],
+    "lever": [
+        {
+            "name": "Palantir",
+            "company_token": "palantir"
+        },
+        {
+            "name": "Zoox",
+            "company_token": "zoox"
+        },
+        {
+            "name": "Ramp",
+            "company_token": "ramp"
+        }
     ]
 }
 
