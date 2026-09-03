@@ -1,5 +1,4 @@
 from datetime import datetime
-
 from app.models.job import Job
 from app.validation.job_validator import JobValidator
 

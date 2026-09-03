@@ -4,13 +4,12 @@ from app.validation.job_validator import JobValidator
 from app.etl.transform import jobs_to_dataframe
 from app.etl.export import export_to_excel
 from app.sources.greenhouse_source import GreenhouseSource
-# fe97661776c1158ec6fb1f492661ebe9b563f72c68b7c33777004699b6a56e8a
+from app.sources.serpapi_source import SerpApiSource
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
-# import os
-# api_key = os.getenv("SERPAPI_API_KEY")
 
 def main():
 
@@ -54,6 +53,30 @@ def main():
         jobs.extend(source.search())
 
     # ---------------------------------------------------------
+    # Search SerpApi
+    #
+    # IMPORTANT:
+    # SerpApi results are part of the real job pipeline.
+    # A missing posting_date is allowed to continue through
+    # validation and ultimately be written to Excel as "None".
+    # ---------------------------------------------------------
+
+    serpapi = SerpApiSource()
+
+    search_terms = config.get(
+        "search_terms",
+        []
+    )
+
+    for search_term in search_terms:
+
+        serpapi_jobs = serpapi.search(
+            query=search_term
+        )
+
+        jobs.extend(serpapi_jobs)
+
+    # ---------------------------------------------------------
     # Create validator
     # ---------------------------------------------------------
 
@@ -72,19 +95,11 @@ def main():
 
         if valid:
 
-            # -------------------------------------------------
-            # Calculate technology score
-            # -------------------------------------------------
-
             (
                 score,
                 matched_technologies,
                 technology_percentage
             ) = validator.calculate_score(job)
-
-            # -------------------------------------------------
-            # Attach calculated values to job
-            # -------------------------------------------------
 
             job.score = score
 
@@ -108,28 +123,13 @@ def main():
     # Console summary
     # ---------------------------------------------------------
 
-    print(f"Jobs found: {len(jobs)}")
-
     print(
-        f"Jobs accepted: "
-        f"{len(accepted_jobs)}"
+        f"Jobs found: {len(jobs)}"
     )
 
     print(
-        f"Jobs rejected: "
-        f"{len(rejected_jobs)}"
+        f"Jobs accepted: {len(accepted_jobs)}"
     )
-
-    # ---------------------------------------------------------
-    # Display rejected jobs
-    # ---------------------------------------------------------
-
-    for job, reason in rejected_jobs:
-
-        print(
-            f"REJECTED: {job.company} - "
-            f"{job.title} - {reason}"
-        )
 
     # ---------------------------------------------------------
     # Convert accepted jobs to DataFrame
@@ -148,8 +148,7 @@ def main():
     )
 
     print(
-        f"Excel report created: "
-        f"{output_file}"
+        f"Excel report created: {output_file}"
     )
 
     print("ajsclient complete.")
@@ -157,3 +156,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

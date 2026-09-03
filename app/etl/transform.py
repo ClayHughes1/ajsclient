@@ -7,6 +7,20 @@ def jobs_to_dataframe(jobs):
 
     for job in jobs:
 
+        posting_date = getattr(
+            job,
+            "posting_date",
+            None
+        )
+
+        # ---------------------------------------------------------
+        # Preserve missing posting dates as the literal string
+        # "None" so Excel does not convert them into blank cells.
+        # ---------------------------------------------------------
+
+        if posting_date is None:
+            posting_date = "None"
+
         rows.append({
 
             "Company": job.company,
@@ -15,7 +29,7 @@ def jobs_to_dataframe(jobs):
 
             "Location": job.location,
 
-            "Posting Date": job.posting_date,
+            "Posting Date": posting_date,
 
             "Salary": getattr(
                 job,
@@ -48,7 +62,11 @@ def jobs_to_dataframe(jobs):
             "URL": getattr(
                 job,
                 "url",
-                ""
+                getattr(
+                    job,
+                    "posting_url",
+                    ""
+                )
             )
         })
 
