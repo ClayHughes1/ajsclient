@@ -1,20 +1,55 @@
 import pandas as pd
 
 
-def jobs_to_dataframe(jobs) -> pd.DataFrame:
+def jobs_to_dataframe(jobs):
 
-    records = []
+    rows = []
 
     for job in jobs:
-        records.append({
+
+        rows.append({
+
             "Company": job.company,
+
             "Title": job.title,
+
             "Location": job.location,
+
             "Posting Date": job.posting_date,
-            "Salary": job.salary,
-            "Source": job.source,
-            "Posting URL": job.posting_url,
-            "Description": job.description
+
+            "Salary": getattr(
+                job,
+                "salary",
+                None
+            ),
+
+            "Technology Score": getattr(
+                job,
+                "score",
+                0
+            ),
+
+            "Technology Match %": getattr(
+                job,
+                "technology_percentage",
+                0
+            ),
+
+            "Matched Technologies": ", ".join(
+                getattr(
+                    job,
+                    "matched_technologies",
+                    []
+                )
+            ),
+
+            "Description": job.description,
+
+            "URL": getattr(
+                job,
+                "url",
+                ""
+            )
         })
 
-    return pd.DataFrame(records)
+    return pd.DataFrame(rows)

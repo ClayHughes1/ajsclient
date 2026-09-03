@@ -99,5 +99,36 @@
         "GitHub": 4,
         "CI/CD": 5,
         "Node": 4
+    },
+    "incompatible_technologies": {
+        "Java": [
+            "java",
+            "java developer",
+            "java development",
+            "java programming",
+            "java backend",
+            "spring",
+            "spring boot"
+        ],
+        "Go": [
+            "go",
+            "golang",
+            "go developer",
+            "go development",
+            "go programming",
+            "go backend"
+        ],
+        "C++": [
+            "c++",
+            "cpp"
+        ],
+        "Scala": [
+            "scala"
+        ],
+        "Ruby": [
+            "ruby",
+            "ruby on rails",
+            "rails developer"
+        ]
     }
 }
