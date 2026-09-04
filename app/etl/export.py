@@ -4,17 +4,7 @@ from pathlib import Path
 import pandas as pd
 
 
-def export_to_excel(dataframe):
-
-    output_directory = Path("output")
-    output_directory.mkdir(exist_ok=True)
-
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M%S")
-
-    output_file = (
-        output_directory /
-        f"ajsclient_{timestamp}.xlsx"
-    )
+def _prepare_dataframe(dataframe):
 
     export_dataframe = dataframe.copy()
 
@@ -34,9 +24,57 @@ def export_to_excel(dataframe):
                 )
             )
 
+    return export_dataframe
+
+
+def export_to_excel(dataframe):
+
+    output_directory = Path("output")
+    output_directory.mkdir(exist_ok=True)
+
+    timestamp = datetime.now().strftime(
+        "%Y-%m-%d_%H%M%S"
+    )
+
+    output_file = (
+        output_directory /
+        f"ajsclient_{timestamp}.xlsx"
+    )
+
+    export_dataframe = _prepare_dataframe(
+        dataframe
+    )
+
     export_dataframe.to_excel(
         output_file,
         index=False
     )
 
     return output_file
+
+
+def export_rejected_to_excel(dataframe):
+
+    output_directory = Path("output")
+    output_directory.mkdir(exist_ok=True)
+
+    timestamp = datetime.now().strftime(
+        "%Y-%m-%d_%H%M%S"
+    )
+
+    output_file = (
+        output_directory /
+        f"ajsclient_rejected_{timestamp}.xlsx"
+    )
+
+    export_dataframe = _prepare_dataframe(
+        dataframe
+    )
+
+    export_dataframe.to_excel(
+        output_file,
+        index=False
+    )
+
+    return output_file
+

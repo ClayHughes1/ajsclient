@@ -1,10 +1,16 @@
+from time import sleep
+
 from app.sources.lever_source import LeverSource
 from app.config import load_config, load_companies
 from app.validation.job_validator import JobValidator
 from app.etl.transform import jobs_to_dataframe
-from app.etl.export import export_to_excel
+from app.etl.export import (
+    export_to_excel,
+    export_rejected_to_excel
+)
 from app.sources.greenhouse_source import GreenhouseSource
 from app.sources.serpapi_source import SerpApiSource
+from app.sources.jobspy_source import JobSpySource
 
 from dotenv import load_dotenv
 
@@ -54,11 +60,6 @@ def main():
 
     # ---------------------------------------------------------
     # Search SerpApi
-    #
-    # IMPORTANT:
-    # SerpApi results are part of the real job pipeline.
-    # A missing posting_date is allowed to continue through
-    # validation and ultimately be written to Excel as "None".
     # ---------------------------------------------------------
 
     serpapi = SerpApiSource()
@@ -75,6 +76,59 @@ def main():
         )
 
         jobs.extend(serpapi_jobs)
+
+    # ---------------------------------------------------------
+    # Search JobSpy
+    #
+    # JobSpy searches multiple job boards.
+    #
+    # The search is restricted to jobs posted during the
+    # previous 24 hours.
+    #
+    # A pause is used between search terms so LinkedIn does
+    # not receive another request immediately.
+    # ---------------------------------------------------------
+
+    jobspy = JobSpySource(
+        location="United States",
+        sites=[
+            "indeed",
+            "linkedin",
+        ],
+        posting_age_days=1,
+        results_wanted=25,
+    )
+
+    # Seconds to wait before starting the next JobSpy search.
+    # This is primarily intended to reduce repeated LinkedIn
+    # requests.
+    jobspy_wait_seconds = 10
+
+    for index, search_term in enumerate(search_terms):
+
+        print(
+            f"JobSpy search "
+            f"{index + 1}/{len(search_terms)}: "
+            f"{search_term}"
+        )
+
+        jobspy_jobs = jobspy.search(
+            search_term=search_term
+        )
+
+        jobs.extend(jobspy_jobs)
+
+        # Do not wait after the final search.
+        if index < len(search_terms) - 1:
+
+            print(
+                f"Waiting "
+                f"{jobspy_wait_seconds} seconds "
+                f"before next JobSpy search..."
+            )
+
+
+            sleep(jobspy_wait_seconds)
 
     # ---------------------------------------------------------
     # Create validator
@@ -140,6 +194,40 @@ def main():
     )
 
     # ---------------------------------------------------------
+    # Convert rejected jobs to DataFrame
+    #
+    # rejected_jobs contains:
+    #
+    #     (job, rejection_reason)
+    # ---------------------------------------------------------
+
+    rejected_dataframe = jobs_to_dataframe(
+        [job for job, reason in rejected_jobs]
+    )
+
+    if not rejected_dataframe.empty:
+
+        rejected_dataframe["rejection_reason"] = [
+            reason
+            for job, reason in rejected_jobs
+        ]
+
+    # rejected_dataframe["job_description"] = [
+    #     job.description
+    #     for job, reason in rejected_jobs
+    # ]
+
+    rejected_dataframe["source"] = [
+        job.source
+        for job, reason in rejected_jobs
+    ]
+
+    print(
+        f"Jobs rejected: {len(rejected_jobs)}"
+    )
+
+
+    # ---------------------------------------------------------
     # Export to Excel
     # ---------------------------------------------------------
 
@@ -151,9 +239,25 @@ def main():
         f"Excel report created: {output_file}"
     )
 
+    # ---------------------------------------------------------
+    # Export rejected jobs
+    # ---------------------------------------------------------
+
+    rejected_output_file = export_rejected_to_excel(
+        rejected_dataframe
+    )
+
+    print(
+        f"Jobs rejected: {len(rejected_jobs)}"
+    )
+
+    print(
+        f"Rejected jobs report created: "
+        f"{rejected_output_file}"
+    )
+
     print("ajsclient complete.")
 
 
 if __name__ == "__main__":
     main()
-

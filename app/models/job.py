@@ -12,3 +12,6 @@ class Job:
     posting_date: datetime | None = None
     salary: str = ""
     source: str = ""
+    apply_url: str = ""
+    employment_type: str = ""
+    job_id: str = ""
