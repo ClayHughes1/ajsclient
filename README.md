@@ -19,7 +19,9 @@ The application is designed to:
 - Generate timestamped Excel reports
 - Maintain execution logs
 - Run automatically using Windows Task Scheduler
-
+- Run  ".\.venv312\Scripts\Activate.ps1" in powershell to switch to the correct virtual environmentimplementing 
+- JobSpy requires either python 3.12.0 to 3.13.0 and cannot run in venv 314
+- 
 ## Architecture
 
 Public Job Sources
