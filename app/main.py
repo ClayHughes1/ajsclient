@@ -11,8 +11,14 @@ from app.etl.export import (
 from app.sources.greenhouse_source import GreenhouseSource
 from app.sources.serpapi_source import SerpApiSource
 from app.sources.jobspy_source import JobSpySource
+from app.sources.ashby_source import AshbySource
+from app.sources.usajobs_source import USAJobsSource
 
 from dotenv import load_dotenv
+from app.sources.workday_source import WorkdaySource
+from app.sources.company_careers_source import CompanyCareersSource
+from app.sources.direct_company_source import RejectedPostingEnricher
+
 
 load_dotenv()
 
@@ -33,7 +39,7 @@ def main():
     # ---------------------------------------------------------
     # Search Greenhouse companies
     # ---------------------------------------------------------
-
+    print("Starting Greenhouse job posting search.\n");
     for company in companies.get("greenhouse", []):
 
         source = GreenhouseSource(
@@ -47,6 +53,7 @@ def main():
     # ---------------------------------------------------------
     # Search Lever companies
     # ---------------------------------------------------------
+    print("Starting Lever job posting search.\n");
 
     for company in companies.get("lever", []):
 
@@ -61,33 +68,41 @@ def main():
     # ---------------------------------------------------------
     # Search SerpApi
     # ---------------------------------------------------------
+    #ONly get 250 requests per month. 
+    #print("Starting SerpApi job posting search.\n");
 
-    serpapi = SerpApiSource()
+    # serpapi = SerpApiSource()
+
+    # search_terms = config.get(
+    #     "search_terms",
+    #     []
+    # )
+
+    # for search_term in search_terms:
+
+    #     serpapi_jobs = serpapi.search(
+    #         query=search_term
+    #     )
+
+    #     jobs.extend(serpapi_jobs)
+
+    # ---------------------------------------------------------
+    # Search JobSpy
+    
+    # JobSpy searches multiple job boards.
+    
+    # The search is restricted to jobs posted during the
+    # previous 24 hours.
+    
+    # A pause is used between search terms so LinkedIn does
+    # not receive another request immediately.
+    # ---------------------------------------------------------
+    print("Starting JObSpy job posting search.\n");
 
     search_terms = config.get(
         "search_terms",
         []
     )
-
-    for search_term in search_terms:
-
-        serpapi_jobs = serpapi.search(
-            query=search_term
-        )
-
-        jobs.extend(serpapi_jobs)
-
-    # ---------------------------------------------------------
-    # Search JobSpy
-    #
-    # JobSpy searches multiple job boards.
-    #
-    # The search is restricted to jobs posted during the
-    # previous 24 hours.
-    #
-    # A pause is used between search terms so LinkedIn does
-    # not receive another request immediately.
-    # ---------------------------------------------------------
 
     jobspy = JobSpySource(
         location="United States",
@@ -99,9 +114,6 @@ def main():
         results_wanted=25,
     )
 
-    # Seconds to wait before starting the next JobSpy search.
-    # This is primarily intended to reduce repeated LinkedIn
-    # requests.
     jobspy_wait_seconds = 10
 
     for index, search_term in enumerate(search_terms):
@@ -118,17 +130,153 @@ def main():
 
         jobs.extend(jobspy_jobs)
 
-        # Do not wait after the final search.
-        if index < len(search_terms) - 1:
+    # Do not wait after the final search.
+    if index < len(search_terms) - 1:
+
+        print(
+            f"Waiting "
+            f"{jobspy_wait_seconds} seconds "
+            f"before next JobSpy search..."
+        )
+
+        sleep(jobspy_wait_seconds)
+
+    # ---------------------------------------------------------
+    # Search Workday companies
+    # ---------------------------------------------------------
+    print("Starting Workday job posting search.\n");
+
+    search_terms = config.get(
+        "search_terms",
+        []
+    )
+
+    workday_wait_seconds = 5
+
+    for company in companies.get("workday", []):
+
+        company_name = company["name"]
+
+        try:
+
+            source = WorkdaySource(
+                company_name=company_name,
+                base_url=company["base_url"],
+                posting_age_days=config["posting_age_days"]
+            )
+
+        except ValueError as error:
 
             print(
-                f"Waiting "
-                f"{jobspy_wait_seconds} seconds "
-                f"before next JobSpy search..."
+                f"Skipping Workday company "
+                f"{company_name}: {error}"
+            )
+
+            continue
+
+        try:
+
+            # jobs.extend(
+            #     source.search()
+            # )
+
+            jobs.extend(
+                source.search(
+                    search_terms=search_terms
+                )
             )
 
 
-            sleep(jobspy_wait_seconds)
+        except Exception as error:
+
+            print(
+                f"Workday search failed for "
+                f"{company_name}: {error}"
+            )
+
+            continue
+
+    # ---------------------------------------------------------
+    # Search Ashby companies
+    # ---------------------------------------------------------
+    print("Starting Ashby job posting search.\n");
+
+    for company in companies.get("ashby", []):
+
+        company_name = company["name"]
+
+        try:
+
+            source = AshbySource(
+                company_name=company_name,
+                job_board=company["job_board"],
+                posting_age_days=config["posting_age_days"],
+                request_delay_seconds=10
+            )
+
+        except ValueError as error:
+
+            print(
+                f"Skipping Ashby company "
+                f"{company_name}: {error}"
+            )
+
+            continue
+
+        try:
+
+            jobs.extend(
+                source.search()
+            )
+
+        except Exception as error:
+
+            print(
+                f"Ashby search failed for "
+                f"{company_name}: {error}"
+            )
+
+            continue
+
+    # ---------------------------------------------------------
+    # Search USAJOBS
+    # ---------------------------------------------------------
+    print("Starting USAJOBS job posting search.\n");
+
+    try:
+
+        source = USAJobsSource(
+            posting_age_days=config[
+                "posting_age_days"
+            ]
+        )
+
+        jobs.extend(
+            source.search(
+                search_terms=config.get(
+                    "search_terms",
+                    []
+                ),
+                location=config[
+                    "location"
+                ][
+                    "accepted_locations"
+                ],
+                radius_miles=config[
+                    "location"
+                ][
+                    "radius_miles"
+                ]
+            )
+        )
+    
+    except Exception as error:
+
+        print(
+            f"USAJOBS search failed: {error}"
+        )
+
+
 
     # ---------------------------------------------------------
     # Create validator
@@ -173,6 +321,63 @@ def main():
                 (job, reason)
             )
 
+
+    # ---------------------------------------------------------
+    # Create rejected posting enricher
+    # ---------------------------------------------------------
+
+    print(
+        "Starting rejected posting enrichment.\n"
+    )
+
+    careers_source = CompanyCareersSource()
+
+    rejected_enricher = RejectedPostingEnricher(
+        careers_source=careers_source
+    )
+
+    rejected_enricher.enrich(
+        rejected_jobs
+    )
+
+
+    # print(
+    #     "Starting rejected posting enrichment.\n"
+    # )
+
+    # careers_source = CompanyCareersSource()
+
+    # rejected_enricher = RejectedPostingEnricher(
+    #     careers_source=careers_source
+    # )
+
+    # ---------------------------------------------------------
+    # Enrich rejected postings
+    # ---------------------------------------------------------
+
+    # rejected_enricher.enrich(
+    #     rejected_jobs
+    # )
+
+    # # ---------------------------------------------------------
+    # # Enrich rejected jobs
+    # # ---------------------------------------------------------
+
+    # print(
+    #     "Starting rejected posting enrichment.\n"
+    # )
+
+    # careers_source = CompanyCareersSource()
+
+    # rejected_enricher = RejectedPostingEnricher(
+    #     careers_source=careers_source
+    # )
+
+    # rejected_jobs = rejected_enricher.enrich(
+    #     rejected_jobs
+    # )
+
+
     # ---------------------------------------------------------
     # Console summary
     # ---------------------------------------------------------
@@ -195,10 +400,6 @@ def main():
 
     # ---------------------------------------------------------
     # Convert rejected jobs to DataFrame
-    #
-    # rejected_jobs contains:
-    #
-    #     (job, rejection_reason)
     # ---------------------------------------------------------
 
     rejected_dataframe = jobs_to_dataframe(
@@ -212,11 +413,6 @@ def main():
             for job, reason in rejected_jobs
         ]
 
-    # rejected_dataframe["job_description"] = [
-    #     job.description
-    #     for job, reason in rejected_jobs
-    # ]
-
     rejected_dataframe["source"] = [
         job.source
         for job, reason in rejected_jobs
@@ -226,26 +422,26 @@ def main():
         f"Jobs rejected: {len(rejected_jobs)}"
     )
 
-
     # ---------------------------------------------------------
     # Export to Excel
     # ---------------------------------------------------------
+    if len(dataframe) > 0:
+        output_file = export_to_excel(
+            dataframe
+        )
+        print(
+            f"Excel report created: {output_file}"
+        )
 
-    output_file = export_to_excel(
-        dataframe
-    )
 
-    print(
-        f"Excel report created: {output_file}"
-    )
 
     # ---------------------------------------------------------
     # Export rejected jobs
     # ---------------------------------------------------------
-
-    rejected_output_file = export_rejected_to_excel(
-        rejected_dataframe
-    )
+    if len(rejected_dataframe) > 0:
+        rejected_output_file = export_rejected_to_excel(
+            rejected_dataframe
+        )
 
     print(
         f"Jobs rejected: {len(rejected_jobs)}"

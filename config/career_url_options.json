@@ -1,0 +1,30 @@
+{
+    "career_url_options": {
+        "paths": [
+            "/careers",
+            "/career",
+            "/jobs",
+            "/job",
+            "/all-jobs",
+            "/open-positions",
+            "/openings",
+            "/job-openings",
+            "/employment",
+            "/opportunities",
+            "/work-with-us",
+            "/join-us",
+            "/join-our-team",
+            "/join-the-team"
+        ],
+        "keywords": [
+            "careers",
+            "career",
+            "jobs",
+            "job-openings",
+            "open-positions",
+            "openings",
+            "employment",
+            "opportunities"
+        ]
+    }
+}

@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 def jobs_to_dataframe(jobs):
 
     rows = []
@@ -24,6 +23,12 @@ def jobs_to_dataframe(jobs):
         rows.append({
 
             "Company": job.company,
+
+            "Extracted Company": getattr(
+                job,
+                "company_name_extracted",
+                ""
+            ),
 
             "Title": job.title,
 
@@ -91,14 +96,23 @@ def jobs_to_dataframe(jobs):
                 job,
                 "apply_url",
                 ""
+            ),
+
+            "Careers URL": getattr(
+                job,
+                "careers_url",
+                ""
+            ),
+
+            "Careers URL Valid": getattr(
+                job,
+                "careers_url_valid",
+                False
             )
         })
 
     return pd.DataFrame(rows)
 
-
-
-# import pandas as pd
 
 
 # def jobs_to_dataframe(jobs):
@@ -134,7 +148,25 @@ def jobs_to_dataframe(jobs):
 #             "Salary": getattr(
 #                 job,
 #                 "salary",
-#                 None
+#                 ""
+#             ),
+
+#             "Source": getattr(
+#                 job,
+#                 "source",
+#                 ""
+#             ),
+
+#             "Job ID": getattr(
+#                 job,
+#                 "job_id",
+#                 ""
+#             ),
+
+#             "Employment Type": getattr(
+#                 job,
+#                 "employment_type",
+#                 ""
 #             ),
 
 #             "Technology Score": getattr(
@@ -167,7 +199,14 @@ def jobs_to_dataframe(jobs):
 #                     "posting_url",
 #                     ""
 #                 )
+#             ),
+
+#             "Apply URL": getattr(
+#                 job,
+#                 "apply_url",
+#                 ""
 #             )
 #         })
 
 #     return pd.DataFrame(rows)
+
