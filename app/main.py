@@ -12,9 +12,12 @@ from app.sources.greenhouse_source import GreenhouseSource
 from app.sources.serpapi_source import SerpApiSource
 from app.sources.jobspy_source import JobSpySource
 from app.sources.ashby_source import AshbySource
+from app.sources.usajobs_source import USAJobsSource
 
 from dotenv import load_dotenv
 from app.sources.workday_source import WorkdaySource
+from app.sources.company_careers_source import CompanyCareersSource
+from app.sources.direct_company_source import RejectedPostingEnricher
 
 
 load_dotenv()
@@ -36,7 +39,7 @@ def main():
     # ---------------------------------------------------------
     # Search Greenhouse companies
     # ---------------------------------------------------------
-
+    print("Starting Greenhouse job posting search.\n");
     for company in companies.get("greenhouse", []):
 
         source = GreenhouseSource(
@@ -50,6 +53,7 @@ def main():
     # ---------------------------------------------------------
     # Search Lever companies
     # ---------------------------------------------------------
+    print("Starting Lever job posting search.\n");
 
     for company in companies.get("lever", []):
 
@@ -65,6 +69,8 @@ def main():
     # Search SerpApi
     # ---------------------------------------------------------
     #ONly get 250 requests per month. 
+    #print("Starting SerpApi job posting search.\n");
+
     # serpapi = SerpApiSource()
 
     # search_terms = config.get(
@@ -91,6 +97,8 @@ def main():
     # A pause is used between search terms so LinkedIn does
     # not receive another request immediately.
     # ---------------------------------------------------------
+    print("Starting JObSpy job posting search.\n");
+
     search_terms = config.get(
         "search_terms",
         []
@@ -136,6 +144,7 @@ def main():
     # ---------------------------------------------------------
     # Search Workday companies
     # ---------------------------------------------------------
+    print("Starting Workday job posting search.\n");
 
     search_terms = config.get(
         "search_terms",
@@ -177,29 +186,6 @@ def main():
                 )
             )
 
-            # jobs.extend(
-            #     source.search(
-            #         search_terms=config.get(
-            #             "search_terms",
-            #             []
-            #         ),
-            #         accepted_locations=config.get(
-            #             "location",
-            #             {}
-            #         ).get(
-            #             "accepted_locations",
-            #             []
-            #         ),
-            #         excluded_locations=config.get(
-            #             "location",
-            #             {}
-            #         ).get(
-            #             "excluded_locations",
-            #             []
-            #         )
-            #     )
-            # )
-
 
         except Exception as error:
 
@@ -213,6 +199,7 @@ def main():
     # ---------------------------------------------------------
     # Search Ashby companies
     # ---------------------------------------------------------
+    print("Starting Ashby job posting search.\n");
 
     for company in companies.get("ashby", []):
 
@@ -254,35 +241,42 @@ def main():
     # ---------------------------------------------------------
     # Search USAJOBS
     # ---------------------------------------------------------
+    print("Starting USAJOBS job posting search.\n");
 
-    # try:
+    try:
 
-    #     source = USAJobsSource(
-    #         posting_age_days=config[
-    #             "posting_age_days"
-    #         ]
-    #     )
+        source = USAJobsSource(
+            posting_age_days=config[
+                "posting_age_days"
+            ]
+        )
 
-    #     jobs.extend(
-    #         source.search(
-    #             search_terms=config.get(
-    #                 "search_terms",
-    #                 []
-    #             ),
-    #             location="Melbourne, Florida",
-    #             radius_miles=config[
-    #                 "location"
-    #             ][
-    #                 "radius_miles"
-    #             ]
-    #         )
-    #     )
+        jobs.extend(
+            source.search(
+                search_terms=config.get(
+                    "search_terms",
+                    []
+                ),
+                location=config[
+                    "location"
+                ][
+                    "accepted_locations"
+                ],
+                radius_miles=config[
+                    "location"
+                ][
+                    "radius_miles"
+                ]
+            )
+        )
+    
+    except Exception as error:
 
-    # except Exception as error:
+        print(
+            f"USAJOBS search failed: {error}"
+        )
 
-    #     print(
-    #         f"USAJOBS search failed: {error}"
-    #     )
+
 
     # ---------------------------------------------------------
     # Create validator
@@ -326,6 +320,63 @@ def main():
             rejected_jobs.append(
                 (job, reason)
             )
+
+
+    # ---------------------------------------------------------
+    # Create rejected posting enricher
+    # ---------------------------------------------------------
+
+    print(
+        "Starting rejected posting enrichment.\n"
+    )
+
+    careers_source = CompanyCareersSource()
+
+    rejected_enricher = RejectedPostingEnricher(
+        careers_source=careers_source
+    )
+
+    rejected_enricher.enrich(
+        rejected_jobs
+    )
+
+
+    # print(
+    #     "Starting rejected posting enrichment.\n"
+    # )
+
+    # careers_source = CompanyCareersSource()
+
+    # rejected_enricher = RejectedPostingEnricher(
+    #     careers_source=careers_source
+    # )
+
+    # ---------------------------------------------------------
+    # Enrich rejected postings
+    # ---------------------------------------------------------
+
+    # rejected_enricher.enrich(
+    #     rejected_jobs
+    # )
+
+    # # ---------------------------------------------------------
+    # # Enrich rejected jobs
+    # # ---------------------------------------------------------
+
+    # print(
+    #     "Starting rejected posting enrichment.\n"
+    # )
+
+    # careers_source = CompanyCareersSource()
+
+    # rejected_enricher = RejectedPostingEnricher(
+    #     careers_source=careers_source
+    # )
+
+    # rejected_jobs = rejected_enricher.enrich(
+    #     rejected_jobs
+    # )
+
 
     # ---------------------------------------------------------
     # Console summary

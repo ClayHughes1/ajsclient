@@ -84,7 +84,11 @@
       "Cocoa West, FL",
       "Merritt Island, FL",
       "Cape Canaveral, FL",
-      "Orlando, FL"
+      "Orlando, FL",
+      "Remote - United States",
+      "US - Remote",
+      "Remote (US)",
+      "Remote - US"
     ],
     "excluded_locations": [
       "Memphis, TN"
@@ -118,7 +122,8 @@
     "active top secret clearance",
     "sponsorship required",
     "visa sponsorship",
-    "will sponsor"
+    "will sponsor",
+    "internship"
   ],
   "preferred_technologies": [
     "C#",

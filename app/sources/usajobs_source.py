@@ -79,13 +79,13 @@ class USAJobsSource:
             "Fields": "Full"
         }
 
-        if location:
+        # if location:
 
-            params["LocationName"] = location
+        #     params["LocationName"] = location
 
-        if radius_miles:
+        # if radius_miles:
 
-            params["Radius"] = radius_miles
+        #     params["Radius"] = radius_miles
 
         # ---------------------------------------------------------
         # Perform broad IT search.
@@ -100,6 +100,7 @@ class USAJobsSource:
             params["Page"] = page
 
             try:
+                # print(f"Sending request to USAJOBS {params} \n\n\n");
 
                 response = requests.get(
                     self.BASE_URL,
@@ -107,6 +108,8 @@ class USAJobsSource:
                     params=params,
                     timeout=30
                 )
+
+                # print(f"Getting response {response.json()}");
 
                 response.raise_for_status()
 
@@ -153,6 +156,8 @@ class USAJobsSource:
                 job = self._normalize_job(
                     item
                 )
+                # print(f"job. {job} \n\n\n");
+
 
                 if not job:
 
