@@ -113,6 +113,42 @@
         {
             "name": "Ramp",
             "company_token": "ramp"
+        },
+        {
+            "name": "3Pillar Global",
+            "company_token": "3pillarglobal"
+        },
+        {
+            "name": "Aledade",
+            "company_token": "aledade"
+        },
+        {
+            "name": "Protective",
+            "company_token": "protective"
+        },
+        {
+            "name": "Enable",
+            "company_token": "enable"
+        },
+        {
+            "name": "Reply",
+            "company_token": "reply"
+        },
+        {
+            "name": "SFEIR",
+            "company_token": "sfeir"
+        },
+        {
+            "name": "Berkshire Hathaway Homestate Companies",
+            "company_token": "bhhc"
+        },
+        {
+            "name": "Jobgether",
+            "company_token": "jobgether"
+        },
+        {
+            "name": "Ubiminds",
+            "company_token": "Ubiminds"
         }
     ],
     "ashby": [

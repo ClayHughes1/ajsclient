@@ -59,10 +59,10 @@ class JobSpySource(JobSource):
             verbose=0,
         )
 
-        print(
-            f"JobSpy returned {len(jobs_dataframe)} raw jobs "
-            f"for '{search_term}'"
-        )
+        # print(
+        #     f"JobSpy returned {len(jobs_dataframe)} raw jobs "
+        #     f"for '{search_term}'"
+        # )
 
         if not jobs_dataframe.empty:
 
@@ -75,6 +75,8 @@ class JobSpySource(JobSource):
         jobs = []
 
         for _, item in jobs_dataframe.iterrows():
+
+            # print(f"{item.get("title")}  : {item.get("location")} \n");
 
             # -------------------------------------------------
             # Posting date
@@ -185,9 +187,8 @@ class JobSpySource(JobSource):
             # -------------------------------------------------
             # Location
             # -------------------------------------------------
-
-            location = self._build_location(
-                item
+            location = self._get_string(
+                item.get("location")
             )
 
             # -------------------------------------------------

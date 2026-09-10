@@ -1,0 +1,388 @@
+{
+    "companies": [
+        {
+            "companyName": "SpaceX",
+            "careerpageurl": "https://www.spacex.com/careers"
+        },
+        {
+            "companyName": "Stripe",
+            "careerpageurl": "https://stripe.com/careers"
+        },
+        {
+            "companyName": "Coinbase",
+            "careerpageurl": "https://www.coinbase.com/careers"
+        },
+        {
+            "companyName": "Reddit",
+            "careerpageurl": "https://www.reddit.com/careers"
+        },
+        {
+            "companyName": "Anthropic",
+            "careerpageurl": "https://www.anthropic.com/careers"
+        },
+        {
+            "companyName": "Figma",
+            "careerpageurl": "https://www.figma.com/careers/"
+        },
+        {
+            "companyName": "Airbnb",
+            "careerpageurl": "https://careers.airbnb.com"
+        },
+        {
+            "companyName": "Pinterest",
+            "careerpageurl": "https://www.pinterestcareers.com/"
+        },
+        {
+            "companyName": "Instacart",
+            "careerpageurl": "https://www.instacart.careers/"
+        },
+        {
+            "companyName": "Brex",
+            "careerpageurl": "https://www.brex.com/careers"
+        },
+        {
+            "companyName": "GitLab",
+            "careerpageurl": "https://gitlab.com/jobs"
+        },
+        {
+            "companyName": "Cloudflare",
+            "careerpageurl": "https://www.cloudflare.com/careers/"
+        },
+        {
+            "companyName": "Datadog",
+            "careerpageurl": "https://careers.datadoghq.com"
+        },
+        {
+            "companyName": "Discord",
+            "careerpageurl": "https://discord.com/careers"
+        },
+        {
+            "companyName": "Dropbox",
+            "careerpageurl": "https://www.dropbox.com/en"
+        },
+        {
+            "companyName": "Samsara",
+            "careerpageurl": "https://www.samsara.com/company/careers"
+        },
+        {
+            "companyName": "Lyft",
+            "careerpageurl": "https://www.lyft.com/careers"
+        },
+        {
+            "companyName": "Okta",
+            "careerpageurl": "https://www.okta.com/company/careers/"
+        },
+        {
+            "companyName": "Robinhood",
+            "careerpageurl": "https://careers.robinhood.com/"
+        },
+        {
+            "companyName": "Webflow",
+            "careerpageurl": "https://webflow.com/company/careers"
+        },
+        {
+            "companyName": "Zoox",
+            "careerpageurl": "https://zoox.com/careers"
+        },
+        {
+            "companyName": "COLSA",
+            "careerpageurl": "https://colsa.com/engineer-research-and-development-center-erdc-contract-win/"
+        },
+        {
+            "companyName": "Group One Trading",
+            "careerpageurl": "https://grouponetrading.com/careers"
+        },
+        {
+            "companyName": "K.D. Technologies",
+            "careerpageurl": "https://kdtechnologies.com/careers"
+        },
+        {
+            "companyName": "Speechify",
+            "careerpageurl": "https://speechify.com/careers/"
+        },
+        {
+            "companyName": "Google",
+            "careerpageurl": "https://www.google.com/about/careers/applications/"
+        },
+        {
+            "companyName": "Bentley Systems",
+            "careerpageurl": "https://www.bentley.com"
+        },
+        {
+            "companyName": "nan",
+            "careerpageurl": "https://nan.com/careers"
+        },
+        {
+            "companyName": "K2 Space",
+            "careerpageurl": "https://www.k2space.com/careers"
+        },
+        {
+            "companyName": "NVIDIA",
+            "careerpageurl": "https://www.nvidia.com/en-us/about-nvidia/careers/"
+        },
+        {
+            "companyName": "Applied Materials",
+            "careerpageurl": "https://careers.appliedmaterials.com/careers"
+        },
+        {
+            "companyName": "Moog",
+            "careerpageurl": "https://www.moog.com/content/sites/global/en/careers/"
+        },
+        {
+            "companyName": "Capgemini",
+            "careerpageurl": "https://www.capgemini.com/careers/"
+        },
+        {
+            "companyName": "Twitch",
+            "careerpageurl": "https://www.twitch.tv:443/careers"
+        },
+        {
+            "companyName": "ImmunityBio",
+            "careerpageurl": "https://immunitybio.com/careers/"
+        },
+        {
+            "companyName": "Boeing",
+            "careerpageurl": "https://jobs.boeing.com"
+        },
+        {
+            "companyName": "TikTok",
+            "careerpageurl": "https://www.tiktok.com/404?fromUrl=/careers"
+        },
+        {
+            "companyName": "Acquia",
+            "careerpageurl": "https://www.acquia.com/careers"
+        },
+        {
+            "companyName": "Guidewire",
+            "careerpageurl": "https://www.guidewire.com/about/careers"
+        },
+        {
+            "companyName": "GoodLeap",
+            "careerpageurl": "https://www.goodleap.com/careers"
+        },
+        {
+            "companyName": "Coherent",
+            "careerpageurl": "https://www.coherent.com/peopleandculture"
+        },
+        {
+            "companyName": "Harbinger Motors",
+            "careerpageurl": "https://harbingermotors.com/careers/"
+        },
+        {
+            "companyName": "Genpact",
+            "careerpageurl": "https://www.genpact.com/careers"
+        },
+        {
+            "companyName": "Fortress Safety",
+            "careerpageurl": "https://fortresssafety.com/careers"
+        },
+        {
+            "companyName": "JPMorganChase",
+            "careerpageurl": "https://www.jpmorganchase.com/careers"
+        },
+        {
+            "companyName": "Ghafari",
+            "careerpageurl": "https://www.ghafari.com/careers"
+        },
+        {
+            "companyName": "Carter's",
+            "careerpageurl": "https://careers.carters.com/jobs"
+        },
+        {
+            "companyName": "Lake Michigan Credit Union",
+            "careerpageurl": "https://lakemichigancreditunion.com/jobs"
+        },
+        {
+            "companyName": "AutoZone",
+            "careerpageurl": "https://careers.autozone.com/hcmUI/CandidateExperience/en/sites/CX_1"
+        },
+        {
+            "companyName": "Montgomery College",
+            "careerpageurl": "https://get.safedomainapp.com/?click_id=91210168784&cid=3306&dkw=montgomerycollege.com&pid=185689&yid=sdbt&cachecode=JSCGO%2FaNpA5DHyKBDDyUGA%3D%3D&rhi=70bdc4ed-dcf3-4b1e-bb8e-3cefb6356b8c"
+        },
+        {
+            "companyName": "Kaiser Permanente",
+            "careerpageurl": "https://www.kaiserpermanentejobs.org/?kp_shortcut_referrer=kp.org/careers"
+        },
+        {
+            "companyName": "Superhuman",
+            "careerpageurl": "https://superhuman.com/company/careers"
+        },
+        {
+            "companyName": "Verkada",
+            "careerpageurl": "https://www.verkada.com/careers/"
+        },
+        {
+            "companyName": "Hack The Box",
+            "careerpageurl": "https://www.hackthebox.com/join-us"
+        },
+        {
+            "companyName": "Count",
+            "careerpageurl": "https://count.com/careers"
+        },
+        {
+            "companyName": "Stride",
+            "careerpageurl": "https://stridehq.com/careers"
+        },
+        {
+            "companyName": "Joby Aviation",
+            "careerpageurl": "https://www.jobyaviation.com/careers"
+        },
+        {
+            "companyName": "Gotion",
+            "careerpageurl": "https://www.gotion.com/careers/"
+        },
+        {
+            "companyName": "Prescient Edge",
+            "careerpageurl": "https://prescientedge.com/careers/"
+        },
+        {
+            "companyName": "ZF",
+            "careerpageurl": "https://www.zf.com/mobile/en/careers/careers.html"
+        },
+        {
+            "companyName": "Viasat",
+            "careerpageurl": "https://careers.viasat.com/"
+        },
+        {
+            "companyName": "Hydraulic Controls",
+            "careerpageurl": "https://hydrauliccontrols.com/careers"
+        },
+        {
+            "companyName": "Hucks",
+            "careerpageurl": "https://hucks.com/careers/"
+        },
+        {
+            "companyName": "Humana",
+            "careerpageurl": "https://careers.humana.com/us/en"
+        },
+        {
+            "companyName": "Salesforce",
+            "careerpageurl": "https://www.salesforce.com/company/careers/?bc=OTH"
+        },
+        {
+            "companyName": "Autodesk",
+            "careerpageurl": "https://jobs.autodesk.com/careers"
+        },
+        {
+            "companyName": "Morgan Stanley",
+            "careerpageurl": "https://www.morganstanley.com/people"
+        },
+        {
+            "companyName": "Bank of America",
+            "careerpageurl": "https://careers.bankofamerica.com/en-us"
+        },
+        {
+            "companyName": "Wells Fargo",
+            "careerpageurl": "https://www.wellsfargojobs.com/en/"
+        },
+        {
+            "companyName": "Visa",
+            "careerpageurl": "https://corporate.visa.com/en/careers.html"
+        },
+        {
+            "companyName": "Mastercard",
+            "careerpageurl": "https://careers.mastercard.com/us/en"
+        },
+        {
+            "companyName": "McKesson",
+            "careerpageurl": "https://careers.mckesson.com/en?utm_source=www.mckesson.com&utm_medium=referral&utm_campaign=redirect"
+        },
+        {
+            "companyName": "Blue Origin",
+            "careerpageurl": "https://www.blueorigin.com/careers"
+        },
+        {
+            "companyName": "Toyota",
+            "careerpageurl": "https://careers.toyota.com/us/en/"
+        },
+        {
+            "companyName": "Warner Bros. Discovery",
+            "careerpageurl": "https://careers.wbd.com:443/global/en"
+        },
+        {
+            "companyName": "OpenAI",
+            "careerpageurl": "https://openai.com/careers/"
+        },
+        {
+            "companyName": "Notion",
+            "careerpageurl": "https://www.notion.com/careers"
+        },
+        {
+            "companyName": "Ramp",
+            "careerpageurl": "https://ramp.com/careers"
+        },
+        {
+            "companyName": "Cursor",
+            "careerpageurl": "https://cursor.com/careers"
+        },
+        {
+            "companyName": "Replit",
+            "careerpageurl": "https://replit.com/careers"
+        },
+        {
+            "companyName": "Vanta",
+            "careerpageurl": "https://www.vanta.com/company/careers"
+        },
+        {
+            "companyName": "Lovable",
+            "careerpageurl": "https://lovable.dev/careers"
+        },
+        {
+            "companyName": "Ashby",
+            "careerpageurl": "https://www.ashbyhq.com/careers"
+        },
+        {
+            "companyName": "Andromeda",
+            "careerpageurl": "https://andromedahq.com/careers"
+        },
+        {
+            "companyName": "ARB Interactive",
+            "careerpageurl": "https://www.arbinteractive.com/careers"
+        },
+        {
+            "companyName": "Ema",
+            "careerpageurl": "https://emahq.com/careers"
+        },
+        {
+            "companyName": "Office Hours",
+            "careerpageurl": "https://officehours.com/careers"
+        },
+        {
+            "companyName": "RWX",
+            "careerpageurl": "https://www.rwx.com/about#careers"
+        },
+        {
+            "companyName": "Sandbar",
+            "careerpageurl": "https://www.sandbar.com/careers"
+        },
+        {
+            "companyName": "General Motors",
+            "careerpageurl": "https://search-careers.gm.com/en/"
+        },
+        {
+            "companyName": "The Walt Disney",
+            "careerpageurl": "https://www.disneycareers.com/en"
+        },
+        {
+            "companyName": "3M",
+            "careerpageurl": "https://www.3m.com/3M/en_US/careers-us/"
+        },
+        {
+            "companyName": "Asana",
+            "careerpageurl": "https://asana.com/jobs"
+        },
+        {
+            "companyName": "Postman",
+            "careerpageurl": "https://www.postman.com/company/careers/"
+        },
+        {
+            "companyName": "Ripple",
+            "careerpageurl": "https://ripple.com/careers/"
+        },
+        {
+            "companyName": "SoFi",
+            "careerpageurl": "https://www.sofi.com/careers/"
+        }
+    ]
+}
