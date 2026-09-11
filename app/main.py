@@ -70,17 +70,17 @@ def main():
     # ---------------------------------------------------------
     # Search Lever companies
     # ---------------------------------------------------------
-    # print("Starting Lever job posting search.\n");
+    print("Starting Lever job posting search.\n");
 
-    # for company in companies.get("lever", []):
+    for company in companies.get("lever", []):
 
-    #     source = LeverSource(
-    #         company_name=company["name"],
-    #         company_token=company["company_token"],
-    #         posting_age_days=config["posting_age_days"]
-    #     )
+        source = LeverSource(
+            company_name=company["name"],
+            company_token=company["company_token"],
+            posting_age_days=config["posting_age_days"]
+        )
 
-    #     jobs.extend(source.search())
+        jobs.extend(source.search())
 
     # ---------------------------------------------------------
     # Search SerpApi
@@ -114,146 +114,146 @@ def main():
     # A pause is used between search terms so LinkedIn does
     # not receive another request immediately.
     # ---------------------------------------------------------
-    # print("Starting JObSpy job posting search.\n");
+    print("Starting JObSpy job posting search.\n");
 
-    # search_terms = config.get(
-    #     "search_terms",
-    #     []
-    # )
+    search_terms = config.get(
+        "search_terms",
+        []
+    )
 
-    # jobspy = JobSpySource(
-    #     location="United States",
-    #     sites=[
-    #         "indeed",
-    #         "linkedin",
-    #     ],
-    #     posting_age_days=1,
-    #     results_wanted=25,
-    # )
+    jobspy = JobSpySource(
+        location="United States",
+        sites=[
+            "indeed",
+            "linkedin",
+        ],
+        posting_age_days=1,
+        results_wanted=25,
+    )
 
-    # jobspy_wait_seconds = 10
+    jobspy_wait_seconds = 10
 
-    # for index, search_term in enumerate(search_terms):
+    for index, search_term in enumerate(search_terms):
 
-    #     print(
-    #         f"JobSpy search "
-    #         f"{index + 1}/{len(search_terms)}: "
-    #         f"{search_term}"
-    #     )
+        print(
+            f"JobSpy search "
+            f"{index + 1}/{len(search_terms)}: "
+            f"{search_term}"
+        )
 
-    #     jobspy_jobs = jobspy.search(
-    #         search_term=search_term
-    #     )
+        jobspy_jobs = jobspy.search(
+            search_term=search_term
+        )
 
-    #     jobs.extend(jobspy_jobs)
+        jobs.extend(jobspy_jobs)
 
-    # # Do not wait after the final search.
-    # if index < len(search_terms) - 1:
+    # Do not wait after the final search.
+    if index < len(search_terms) - 1:
 
-    #     print(
-    #         f"Waiting "
-    #         f"{jobspy_wait_seconds} seconds "
-    #         f"before next JobSpy search..."
-    #     )
+        print(
+            f"Waiting "
+            f"{jobspy_wait_seconds} seconds "
+            f"before next JobSpy search..."
+        )
 
-    #     sleep(jobspy_wait_seconds)
+        sleep(jobspy_wait_seconds)
 
     # ---------------------------------------------------------
     # Search Workday companies
     # ---------------------------------------------------------
-    # print("Starting Workday job posting search.\n");
+    print("Starting Workday job posting search.\n");
 
-    # search_terms = config.get(
-    #     "search_terms",
-    #     []
-    # )
+    search_terms = config.get(
+        "search_terms",
+        []
+    )
 
-    # workday_wait_seconds = 5
+    workday_wait_seconds = 5
 
-    # for company in companies.get("workday", []):
+    for company in companies.get("workday", []):
 
-    #     company_name = company["name"]
+        company_name = company["name"]
 
-    #     try:
+        try:
 
-    #         source = WorkdaySource(
-    #             company_name=company_name,
-    #             base_url=company["base_url"],
-    #             posting_age_days=config["posting_age_days"]
-    #         )
+            source = WorkdaySource(
+                company_name=company_name,
+                base_url=company["base_url"],
+                posting_age_days=config["posting_age_days"]
+            )
 
-    #     except ValueError as error:
+        except ValueError as error:
 
-    #         print(
-    #             f"Skipping Workday company "
-    #             f"{company_name}: {error}"
-    #         )
+            print(
+                f"Skipping Workday company "
+                f"{company_name}: {error}"
+            )
 
-    #         continue
+            continue
 
-    #     try:
+        try:
 
-    #         # jobs.extend(
-    #         #     source.search()
-    #         # )
+            # jobs.extend(
+            #     source.search()
+            # )
 
-    #         jobs.extend(
-    #             source.search(
-    #                 search_terms=search_terms
-    #             )
-    #         )
+            jobs.extend(
+                source.search(
+                    search_terms=search_terms
+                )
+            )
 
 
-    #     except Exception as error:
+        except Exception as error:
 
-    #         print(
-    #             f"Workday search failed for "
-    #             f"{company_name}: {error}"
-    #         )
+            print(
+                f"Workday search failed for "
+                f"{company_name}: {error}"
+            )
 
-    #         continue
+            continue
 
     # ---------------------------------------------------------
     # Search Ashby companies
     # ---------------------------------------------------------
-    # print("Starting Ashby job posting search.\n");
+    print("Starting Ashby job posting search.\n");
 
-    # for company in companies.get("ashby", []):
+    for company in companies.get("ashby", []):
 
-    #     company_name = company["name"]
+        company_name = company["name"]
 
-    #     try:
+        try:
 
-    #         source = AshbySource(
-    #             company_name=company_name,
-    #             job_board=company["job_board"],
-    #             posting_age_days=config["posting_age_days"],
-    #             request_delay_seconds=10
-    #         )
+            source = AshbySource(
+                company_name=company_name,
+                job_board=company["job_board"],
+                posting_age_days=config["posting_age_days"],
+                request_delay_seconds=10
+            )
 
-    #     except ValueError as error:
+        except ValueError as error:
 
-    #         print(
-    #             f"Skipping Ashby company "
-    #             f"{company_name}: {error}"
-    #         )
+            print(
+                f"Skipping Ashby company "
+                f"{company_name}: {error}"
+            )
 
-    #         continue
+            continue
 
-    #     try:
+        try:
 
-    #         jobs.extend(
-    #             source.search()
-    #         )
+            jobs.extend(
+                source.search()
+            )
 
-    #     except Exception as error:
+        except Exception as error:
 
-    #         print(
-    #             f"Ashby search failed for "
-    #             f"{company_name}: {error}"
-    #         )
+            print(
+                f"Ashby search failed for "
+                f"{company_name}: {error}"
+            )
 
-    #         continue
+            continue
 
     # ---------------------------------------------------------
     # Search USAJOBS
@@ -1090,7 +1090,9 @@ def main():
         f"{rejected_output_file}"
     )
 
-    print("ajsclient complete.")
+    print("ajsclient complete.   "
+        f"Finish time: {datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')}"
+    )
 
 
 if __name__ == "__main__":

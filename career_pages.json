@@ -383,6 +383,50 @@
         {
             "companyName": "SoFi",
             "careerpageurl": "https://www.sofi.com/careers/"
+        },
+        {
+            "companyName": "3Pillar Global",
+            "careerpageurl": "https://www.3pillar.ai/careers/"
+        },
+        {
+            "companyName": "Aledade",
+            "careerpageurl": "https://aledade.com/careers"
+        },
+        {
+            "companyName": "Protective",
+            "careerpageurl": "https://www.protective.com/about-us/careers"
+        },
+        {
+            "companyName": "Enable",
+            "careerpageurl": "https://www.enable.com/careers/"
+        },
+        {
+            "companyName": "Jobgether",
+            "careerpageurl": "https://jobgether.com/remote-jobs"
+        },
+        {
+            "companyName": "HP",
+            "careerpageurl": "https://jobs.hp.com/"
+        },
+        {
+            "companyName": "Elevance Health",
+            "careerpageurl": "https://careers.elevancehealth.com"
+        },
+        {
+            "companyName": "Reply",
+            "careerpageurl": "https://www.reply.com:443/en"
+        },
+        {
+            "companyName": "SFEIR",
+            "careerpageurl": "https://www.sfeir.com/en/"
+        },
+        {
+            "companyName": "Berkshire Hathaway Homestate Companies",
+            "careerpageurl": "https://berkshirehathawayhomestatecompanies.com/careers"
+        },
+        {
+            "companyName": "Ubiminds",
+            "careerpageurl": "https://ubiminds.com/en-us/careers/"
         }
     ]
 }

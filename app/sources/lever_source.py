@@ -130,26 +130,31 @@ class LeverSource(JobSource):
                 {}
             )
 
-            locations = categories.get(
-                "allLocations",
-                []
-            )
+            # locations = categories.get(
+            #     "allLocations",
+            #     []
+            # )
+
+            location = categories.get(
+                "location",
+                "")
+            print(f" Location:  {location}")
 
             primary_location = categories.get(
                 "location",
                 ""
             )
+            print(f"Primary Location:  {primary_location}")
+            # if not locations and primary_location:
+            #     locations = [
+            #         primary_location
+            #     ]
 
-            if not locations and primary_location:
-                locations = [
-                    primary_location
-                ]
-
-            location = "; ".join(
-                str(value)
-                for value in locations
-                if value
-            )
+            # location = "; ".join(
+            #     str(value)
+            #     for value in locations
+            #     if value
+            # )
 
             # -----------------------------------------
             # Employment type
@@ -167,18 +172,27 @@ class LeverSource(JobSource):
             # Description
             # -----------------------------------------
 
-            content = item.get(
-                "content",
-                {}
-            )
+            # content = item.get(
+            #     "content",
+            #     {}
+            # )
 
             description = clean_html_description(
-                content.get(
-                    "description",
+                item.get(
+                    "descriptionPlain",
                     ""
                 )
             )
 
+            # print(f"description: {description}")
+
+            # description = clean_html_description(
+            #     content.get(
+            #         "description",
+            #         ""
+            #     )
+            # )
+            # print(f"description: {description}")
             # -----------------------------------------
             # Salary
             # -----------------------------------------
@@ -232,21 +246,30 @@ class LeverSource(JobSource):
             # -----------------------------------------
             # URLs
             # -----------------------------------------
-
-            urls = item.get(
-                "urls",
-                {}
-            )
-
-            posting_url = urls.get(
-                "show",
+            posting_url = item.get(
+                "hostedUrl",
                 ""
             )
 
-            apply_url = urls.get(
-                "apply",
+            apply_url = item.get(
+                "applyUrl",
                 ""
             )
+
+            # urls = item.get(
+            #     "urls",
+            #     {}
+            # )
+
+            # posting_url = urls.get(
+            #     "show",
+            #     ""
+            # )
+
+            # apply_url = urls.get(
+            #     "apply",
+            #     ""
+            # )
 
             # If Lever doesn't provide a separate
             # application URL, use the posting URL.
