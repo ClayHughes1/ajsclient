@@ -296,35 +296,37 @@ def main():
     # ---------------------------------------------------------
     # Company Scraper 
     # ---------------------------------------------------------
-    # print("Starting career page scraping...")
+    print("Starting career page scraping...")
 
-    # loader = load_career_pages()
-    # career_pages = loader.load()
+    career_pages = load_career_pages()
+    scraper = GenericCareerScraper()
 
-    # scraper = CareerScraper()
+    for career_page in career_pages["companies"]:
+        company = career_page["companyName"]
+        url = career_page["careerpageurl"]
 
-    # for career_page in career_pages:
-    #     company = career_page["company"]
-    #     url = career_page["url"]
+        try:
+            jobs.extend(
+                scraper.scrape(company, url)
+            )
+            
+            jobs = scraper.scrape(company, url)
+            print(f"Jobs found for company {company}:\n {jobs}\n ")
+            print(
+                f"{company}: {len(jobs)} jobs found\n"
+            )
 
-    #     try:
-    #         jobs = scraper.scrape(company, url)
+        except Exception as exc:
+            print(
+                f"ERROR scraping {company}: {exc}"
+            )
 
-    #         print(
-    #             f"{company}: {len(jobs)} jobs found"
-    #         )
-
-    #     except Exception as exc:
-    #         print(
-    #             f"ERROR scraping {company}: {exc}"
-    #         )
-
-    # print("Career page scraping complete.")
+    print("Career page scraping complete.")
 
     # ---------------------------------------------------------
     # Create validator
     # ---------------------------------------------------------
-
+    print('Starting validation process\n')
     validator = JobValidator(config)
 
     accepted_jobs = []
@@ -519,10 +521,6 @@ def main():
     )
 
     # ---------------------------------------------------------
-    # Add newly discovered career pages to career_pages.json.
-    # ---------------------------------------------------------
-
-    # ---------------------------------------------------------
     # Track career pages discovered during this run.
     # ---------------------------------------------------------
 
@@ -649,371 +647,6 @@ def main():
     )
 
 
-    #         new_career_page = {
-    #             "companyName": discovered_company_name,
-    #             "careerpageurl": career_page_url
-    #         }
-
-    #         new_career_pages.append(
-    #             new_career_page
-    #         )
-
-    #         # -------------------------------------------------
-    #         # Prevent this same company from being added again
-    #         # during the current run.
-    #         # -------------------------------------------------
-
-    #         existing_company_names.add(
-    #             company_key
-    #         )
-
-
-    # # ---------------------------------------------------------
-    # # Add only the newly discovered career pages to the
-    # # existing career-page data.
-    # # ---------------------------------------------------------
-
-    # if new_career_pages:
-
-    #     career_pages_data.setdefault(
-    #         "companies",
-    #         []
-    #     ).extend(
-    #         new_career_pages
-    #     )
-
-
-    # # ---------------------------------------------------------
-    # # Save updated career-page data.
-    # # ---------------------------------------------------------
-
-    # print("Saving new career pages")
-
-    # if new_career_pages:
-
-    #     print(
-    #         f"New career pages discovered: "
-    #         f"{len(new_career_pages)}"
-    #     )
-
-    #     for company in new_career_pages:
-    #         print(
-    #             f"Company: {company['companyName']} | "
-    #             f"URL: {company['careerpageurl']}"
-    #         )
-
-    # else:
-
-    #     print("No new career pages discovered.")
-
-
-    # save_career_pages(
-    #     career_pages_data
-    # )
-
-
-#     for job, rejection_reason in new_company_rejected_jobs:
-
-#         company_name = getattr(
-#             job,
-#             "extracted_company_name",
-#             None
-#         )
-
-#         career_pages = getattr(
-#             job,
-#             "company_careers_url",
-#             None
-#         )
-
-#         print(f"Company name: {company_name} - URL: {career_pages}")
-
-#         if not company_name:
-#             continue
-
-#         if not career_pages:
-#             continue
-
-#         # company_careers_url contains a list of:
-#         #
-#         # {
-#         #     "companyName": "...",
-#         #     "careerpageurl": "..."
-#         # }
-#         #
-#         if not isinstance(career_pages, list):
-#             continue
-
-#         for career_page in career_pages:
-
-#             if not isinstance(career_page, dict):
-#                 continue
-
-#             discovered_company_name = career_page.get(
-#                 "companyName"
-#             )
-
-#             career_page_url = career_page.get(
-#                 "careerpageurl"
-#             )
-
-#             if not discovered_company_name:
-#                 continue
-
-#             if not career_page_url:
-#                 continue
-
-#             company_key = str(
-#                 discovered_company_name
-#             ).strip().casefold()
-
-#             # -------------------------------------------------
-#             # Company already exists in career_pages.json.
-#             # -------------------------------------------------
-
-#             if company_key in existing_company_names:
-#                 continue
-
-#             # -------------------------------------------------
-#             # New company -- add it to the JSON data.
-#             # -------------------------------------------------
-
-#             career_pages_data.setdefault(
-#                 "companies",
-#                 []
-#             ).append(
-#                 {
-#                     "companyName": str(
-#                         discovered_company_name
-#                     ).strip(),
-#                     "careerpageurl": str(
-#                         career_page_url
-#                     ).strip()
-#                 }
-#             )
-
-#             # -------------------------------------------------
-#             # Prevent duplicate additions during this run.
-#             # -------------------------------------------------
-
-#             existing_company_names.add(
-#                 company_key
-#             )
-
-#     # ---------------------------------------------------------
-#     # Save updated career-page data.
-#     # ---------------------------------------------------------
-#     print("Saving new carrer pages")
-
-#     for company in new_company_rejected_jobs:
-#         print(f"{company}\n\n\n\n");
-
-#         # print(f"COmpany:   {company}\n\n\n\n");
-#         # print(
-#         #     f"Company: {company.get('companyName')} | "
-#         #     f"URL: {company.get('careerpageurl')}"
-#         # )
-# # .get("companies", [])
-#     save_career_pages(
-#         career_pages_data
-#     )
-
-
-    # # ---------------------------------------------------------
-    # # Create rejected posting enricher
-    # # ---------------------------------------------------------
-
-    # print(
-    #     "Starting rejected posting enrichment.\n"
-    # )
-
-    # # ---------------------------------------------------------
-    # # Load existing career-page results
-    # #
-    # # This creates career_pages.json if it does not exist.
-    # # ---------------------------------------------------------
-
-    # career_pages_data = load_career_pages()
-
-    # # ---------------------------------------------------------
-    # # Get distinct company names from rejected postings
-    # #
-    # # rejected_jobs contains:
-    # #
-    # #     (job, rejection_reason)
-    # #
-    # # so the actual job is the first item in each tuple.
-    # # ---------------------------------------------------------
-
-    # rejected_company_names = []
-
-    # seen_companies = set()
-
-    # for job, reason in rejected_jobs:
-    #     company_name = getattr(
-    #         job,
-    #         "company",
-    #         None
-    #     )
-
-    #     if not company_name:
-    #         continue
-
-    #     company_name = str(
-    #         company_name
-    #     ).strip()
-
-    #     if not company_name:
-    #         continue
-
-    #     company_key = company_name.casefold()
-
-    #     if company_key in seen_companies:
-    #         continue
-
-    #     seen_companies.add(
-    #         company_key
-    #     )
-
-    #     rejected_company_names.append(
-    #         company_name
-    #     )
-
-    # # ---------------------------------------------------------
-    # # Create career source
-    # # ---------------------------------------------------------
-
-    # careers_source = CompanyCareersSource()
-    # existing_company_names = set()
-
-    # rejected_enricher = RejectedPostingEnricher(
-    #     careers_source=careers_source
-    # )
-
-    # rejected_enricher.enrich(
-    #     rejected_jobs
-    # )
-
-    # # ---------------------------------------------------------
-    # # Add newly discovered career pages to career_pages.json
-    # # ---------------------------------------------------------
-
-    # existing_companies = career_pages_data.get(
-    #     "companies",
-    #     []
-    # )
-
-    # # Build a case-insensitive set of company names
-    # # already stored in career_pages.json.
-    # existing_company_names = set()
-
-    # for company in existing_companies:
-
-    #     if not isinstance(company, dict):
-    #         continue
-
-    #     company_name = company.get(
-    #         "companyName"
-    #     )
-
-    #     if not company_name:
-    #         continue
-
-    #     existing_company_names.add(
-    #         str(company_name).strip().casefold()
-    #     )
-
-
-    # # ---------------------------------------------------------
-    # # Process career pages discovered during enrichment
-    # # ---------------------------------------------------------
-
-    # for job, rejection_reason in rejected_jobs:
-
-    #     company_name = getattr(
-    #         job,
-    #         "extracted_company_name",
-    #         None
-    #     )
-
-    #     career_pages = getattr(
-    #         job,
-    #         "company_careers_url",
-    #         None
-    #     )
-
-    #     if not company_name:
-    #         continue
-
-    #     if not career_pages:
-    #         continue
-
-    #     # company_careers_url appears to contain a list
-    #     # of {companyName, careerpageurl} dictionaries.
-    #     if not isinstance(career_pages, list):
-    #         continue
-
-    #     for career_page in career_pages:
-
-    #         if not isinstance(career_page, dict):
-    #             continue
-
-    #         discovered_company_name = career_page.get(
-    #             "companyName"
-    #         )
-
-    #         career_page_url = career_page.get(
-    #             "careerpageurl"
-    #         )
-
-    #         if not discovered_company_name:
-    #             continue
-
-    #         if not career_page_url:
-    #             continue
-
-    #         company_key = str(
-    #             discovered_company_name
-    #         ).strip().casefold()
-
-    #         # -------------------------------------------------
-    #         # Company already exists in career_pages.json
-    #         # -------------------------------------------------
-
-    #         if company_key in existing_company_names:
-    #             continue
-
-    #         # -------------------------------------------------
-    #         # New company -- add it to the JSON data
-    #         # -------------------------------------------------
-
-    #         career_pages_data.setdefault(
-    #             "companies",
-    #             []
-    #         ).append(
-    #             {
-    #                 "companyName": str(
-    #                     discovered_company_name
-    #                 ).strip(),
-    #                 "careerpageurl": str(
-    #                     career_page_url
-    #                 ).strip()
-    #             }
-    #         )
-
-    #         # Prevent duplicate additions during this run.
-    #         existing_company_names.add(
-    #             company_key
-    #         )
-
-
-    # # ---------------------------------------------------------
-    # # Save updated career-pages data
-    # # ---------------------------------------------------------
-
-    # save_career_pages(
-    #     career_pages_data
-    # )
 
 
     # ---------------------------------------------------------
@@ -1043,6 +676,8 @@ def main():
     rejected_dataframe = jobs_to_dataframe(
         [job for job, reason in rejected_jobs]
     )
+
+    print(f"Rejected dataFrame length:  {len(rejected_dataframe)}\n\n")
 
     if not rejected_dataframe.empty:
 
@@ -1076,18 +711,15 @@ def main():
     # ---------------------------------------------------------
     # Export rejected jobs
     # ---------------------------------------------------------
+    print("Exporting the rejected records\n")
     if len(rejected_dataframe) > 0:
-        rejected_output_file = export_rejected_to_excel(
+        export_rejected_to_excel(
             rejected_dataframe
         )
 
-    print(
-        f"Jobs rejected: {len(rejected_jobs)}"
-    )
 
     print(
-        f"Rejected jobs report created: "
-        f"{rejected_output_file}"
+        f"Jobs rejected: {len(rejected_jobs)}"
     )
 
     print("ajsclient complete.   "
