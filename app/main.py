@@ -8,6 +8,12 @@ from app.etl.export import (
     export_to_excel,
     export_rejected_to_excel
 )
+# from utils.career_pages_storage import (
+#     load_career_pages,
+#     get_distinct_company_names,
+#     filter_rejected_jobs_by_company
+# )
+
 from app.sources.greenhouse_source import GreenhouseSource
 from app.sources.serpapi_source import SerpApiSource
 from app.sources.jobspy_source import JobSpySource
@@ -18,6 +24,14 @@ from dotenv import load_dotenv
 from app.sources.workday_source import WorkdaySource
 from app.sources.company_careers_source import CompanyCareersSource
 from app.sources.direct_company_source import RejectedPostingEnricher
+from datetime import datetime
+import json
+import os
+from app.utils.career_pages_storage import (
+    load_career_pages,
+    save_career_pages
+)
+from app.career_scraper.generic_scraper import GenericCareerScraper
 
 
 load_dotenv()
@@ -25,7 +39,10 @@ load_dotenv()
 
 def main():
 
-    print("Starting ajsclient...")
+    print(
+        f"Starting ajsclient... "
+        f"Start time: {datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')}"
+    )
 
     # ---------------------------------------------------------
     # Load configuration
@@ -276,12 +293,40 @@ def main():
             f"USAJOBS search failed: {error}"
         )
 
+    # ---------------------------------------------------------
+    # Company Scraper 
+    # ---------------------------------------------------------
+    print("Starting career page scraping...")
 
+    career_pages = load_career_pages()
+    scraper = GenericCareerScraper()
+
+    for career_page in career_pages["companies"]:
+        company = career_page["companyName"]
+        url = career_page["careerpageurl"]
+
+        try:
+            jobs.extend(
+                scraper.scrape(company, url)
+            )
+            
+            jobs = scraper.scrape(company, url)
+            print(f"Jobs found for company {company}:\n {jobs}\n ")
+            print(
+                f"{company}: {len(jobs)} jobs found\n"
+            )
+
+        except Exception as exc:
+            print(
+                f"ERROR scraping {company}: {exc}"
+            )
+
+    print("Career page scraping complete.")
 
     # ---------------------------------------------------------
     # Create validator
     # ---------------------------------------------------------
-
+    print('Starting validation process\n')
     validator = JobValidator(config)
 
     accepted_jobs = []
@@ -321,7 +366,6 @@ def main():
                 (job, reason)
             )
 
-
     # ---------------------------------------------------------
     # Create rejected posting enricher
     # ---------------------------------------------------------
@@ -330,52 +374,279 @@ def main():
         "Starting rejected posting enrichment.\n"
     )
 
+    # ---------------------------------------------------------
+    # Load existing career-page results.
+    #
+    # This creates career_pages.json if it does not exist.
+    # ---------------------------------------------------------
+
+    career_pages_data = load_career_pages()
+
+    # ---------------------------------------------------------
+    # Build a case-insensitive set of company names that
+    # already have a validated career page stored in
+    # career_pages.json.
+    #
+    # IMPORTANT:
+    #
+    # Only the company names are placed in this set.
+    # The URLs remain in career_pages_data.
+    # ---------------------------------------------------------
+
+    existing_companies = career_pages_data.get(
+        "companies",
+        []
+    )
+
+    existing_company_names = set()
+
+    for company in existing_companies:
+
+        if not isinstance(company, dict):
+            continue
+
+        company_name = company.get(
+            "companyName"
+        )
+
+        if not company_name:
+            continue
+
+        company_name = str(
+            company_name
+        ).strip()
+
+        if not company_name:
+            continue
+
+        existing_company_names.add(
+            company_name.casefold()
+        )
+
+    # ---------------------------------------------------------
+    # Get rejected jobs that belong to companies that do NOT
+    # already exist in career_pages.json.
+    #
+    # These are the ONLY jobs that need career-page discovery.
+    # ---------------------------------------------------------
+
+    new_company_rejected_jobs = []
+
+    seen_new_companies = set()
+
+    for job, reason in rejected_jobs:
+
+        company_name = getattr(
+            job,
+            "company",
+            None
+        )
+
+        if not company_name:
+            continue
+
+        company_name = str(
+            company_name
+        ).strip()
+
+        if not company_name:
+            continue
+
+        company_key = company_name.casefold()
+
+        # -----------------------------------------------------
+        # Company already has a validated career page.
+        #
+        # Do NOT send this company through
+        # CompanyCareersSource.
+        # -----------------------------------------------------
+
+        if company_key in existing_company_names:
+            continue
+
+        # -----------------------------------------------------
+        # Prevent processing the same NEW company more than
+        # once during this run.
+        # -----------------------------------------------------
+
+        if company_key in seen_new_companies:
+            continue
+
+        seen_new_companies.add(
+            company_key
+        )
+
+        new_company_rejected_jobs.append(
+            (job, reason)
+        )
+
+    # ---------------------------------------------------------
+    # Debug information.
+    # ---------------------------------------------------------
+
+    print(
+        f"    Rejected postings: "
+        f"{len(rejected_jobs)}"
+    )
+
+    print(
+        f"    Companies already in "
+        f"career_pages.json: "
+        f"{len(existing_company_names)}"
+    )
+
+    print(
+        f"    New companies requiring "
+        f"career-page discovery: "
+        f"{len(new_company_rejected_jobs)}"
+    )
+
+    # ---------------------------------------------------------
+    # Create career source.
+    # ---------------------------------------------------------
+
     careers_source = CompanyCareersSource()
 
     rejected_enricher = RejectedPostingEnricher(
         careers_source=careers_source
     )
 
+    # ---------------------------------------------------------
+    # ONLY enrich jobs belonging to companies that do not
+    # already exist in career_pages.json.
+    # ---------------------------------------------------------
+
     rejected_enricher.enrich(
-        rejected_jobs
+        new_company_rejected_jobs
+    )
+
+    # ---------------------------------------------------------
+    # Track career pages discovered during this run.
+    # ---------------------------------------------------------
+
+    new_career_pages = []
+
+    for job, rejection_reason in new_company_rejected_jobs:
+
+        company_name = getattr(
+            job,
+            "extracted_company_name",
+            None
+        )
+
+        career_pages = getattr(
+            job,
+            "company_careers_url",
+            None
+        )
+
+        if not company_name:
+            continue
+
+        if not career_pages:
+            continue
+
+        # -------------------------------------------------
+        # company_careers_url is the validated career URL
+        # returned by RejectedPostingEnricher.
+        # -------------------------------------------------
+
+        discovered_company_name = str(
+            company_name
+        ).strip()
+
+        career_page_url = str(
+            career_pages
+        ).strip()
+
+        if not discovered_company_name:
+            continue
+
+        if not career_page_url:
+            continue
+
+        company_key = (
+            discovered_company_name
+            .casefold()
+        )
+
+        # -------------------------------------------------
+        # Company already exists in career_pages.json.
+        # -------------------------------------------------
+
+        if company_key in existing_company_names:
+            print(
+                f"Already exists: "
+                f"{discovered_company_name}"
+            )
+            continue
+
+        # -------------------------------------------------
+        # New company.
+        # -------------------------------------------------
+
+        new_career_page = {
+            "companyName": discovered_company_name,
+            "careerpageurl": career_page_url
+        }
+
+        # -------------------------------------------------
+        # Add directly to the data that will be saved.
+        # -------------------------------------------------
+
+        career_pages_data.setdefault(
+            "companies",
+            []
+        ).append(
+            new_career_page
+        )
+
+        # -------------------------------------------------
+        # Track new records discovered during this run.
+        # -------------------------------------------------
+
+        new_career_pages.append(
+            new_career_page
+        )
+
+        # -------------------------------------------------
+        # Prevent duplicate additions during this run.
+        # -------------------------------------------------
+
+        existing_company_names.add(
+            company_key
+        )
+
+    # ---------------------------------------------------------
+    # Save updated career-page data.
+    # ---------------------------------------------------------
+
+    print(f"Saving new career pages - new career page length; {len(new_career_pages)}")
+
+    if new_career_pages:
+
+        print(
+            f"New career pages discovered: "
+            f"{len(new_career_pages)}"
+        )
+
+        for company in new_career_pages:
+
+            print(
+                f"Company: {company['companyName']} | "
+                f"URL: {company['careerpageurl']}"
+            )
+
+    else:
+
+        print("No new career pages discovered.")
+
+
+    save_career_pages(
+        career_pages_data
     )
 
 
-    # print(
-    #     "Starting rejected posting enrichment.\n"
-    # )
-
-    # careers_source = CompanyCareersSource()
-
-    # rejected_enricher = RejectedPostingEnricher(
-    #     careers_source=careers_source
-    # )
-
-    # ---------------------------------------------------------
-    # Enrich rejected postings
-    # ---------------------------------------------------------
-
-    # rejected_enricher.enrich(
-    #     rejected_jobs
-    # )
-
-    # # ---------------------------------------------------------
-    # # Enrich rejected jobs
-    # # ---------------------------------------------------------
-
-    # print(
-    #     "Starting rejected posting enrichment.\n"
-    # )
-
-    # careers_source = CompanyCareersSource()
-
-    # rejected_enricher = RejectedPostingEnricher(
-    #     careers_source=careers_source
-    # )
-
-    # rejected_jobs = rejected_enricher.enrich(
-    #     rejected_jobs
-    # )
 
 
     # ---------------------------------------------------------
@@ -405,6 +676,8 @@ def main():
     rejected_dataframe = jobs_to_dataframe(
         [job for job, reason in rejected_jobs]
     )
+
+    print(f"Rejected dataFrame length:  {len(rejected_dataframe)}\n\n")
 
     if not rejected_dataframe.empty:
 
@@ -438,21 +711,20 @@ def main():
     # ---------------------------------------------------------
     # Export rejected jobs
     # ---------------------------------------------------------
+    print("Exporting the rejected records\n")
     if len(rejected_dataframe) > 0:
-        rejected_output_file = export_rejected_to_excel(
+        export_rejected_to_excel(
             rejected_dataframe
         )
+
 
     print(
         f"Jobs rejected: {len(rejected_jobs)}"
     )
 
-    print(
-        f"Rejected jobs report created: "
-        f"{rejected_output_file}"
+    print("ajsclient complete.   "
+        f"Finish time: {datetime.now().strftime('%Y-%m-%d %I:%M:%S %p')}"
     )
-
-    print("ajsclient complete.")
 
 
 if __name__ == "__main__":

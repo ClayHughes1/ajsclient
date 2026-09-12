@@ -35,190 +35,386 @@ class JobSpySource(JobSource):
         if not search_term.strip():
             return []
 
-        jobs_dataframe = scrape_jobs(
-            site_name=self.sites,
-            search_term=search_term,
-            location=self.location,
-            results_wanted=self.results_wanted,
-
-            # Only retrieve jobs posted within the
-            # previous 24 hours.
-            hours_old=(
-                self.posting_age_days * 24
-                if self.posting_age_days is not None
-                else None
-            ),
-
-            country_indeed="USA",
-            description_format="markdown",
-
-            # Do not make additional LinkedIn requests
-            # to retrieve full descriptions/direct URLs.
-            linkedin_fetch_description=False,
-
-            verbose=0,
-        )
-
-        print(
-            f"JobSpy returned {len(jobs_dataframe)} raw jobs "
-            f"for '{search_term}'"
-        )
-
-        if not jobs_dataframe.empty:
-
-            print(
-                jobs_dataframe["site"]
-                .value_counts()
-                .to_string()
-            )
-
         jobs = []
 
-        for _, item in jobs_dataframe.iterrows():
+        for site in self.sites:
 
-            # -------------------------------------------------
-            # Posting date
-            # -------------------------------------------------
+            try:
 
-            posting_date = self._parse_posting_date(
-                item.get("date_posted")
-            )
-
-            # Apply the same posting-age validation
-            # after retrieval.
-            if self.posting_age_days is not None:
-
-                if posting_date is None:
-                    continue
-
-                now = datetime.now(
-                    timezone.utc
+                print(
+                    f"JobSpy {site} search: "
+                    f"{search_term}"
                 )
 
-                cutoff_date = (
-                    now -
-                    timedelta(
-                        days=self.posting_age_days
+                jobs_dataframe = scrape_jobs(
+                    site_name=[site],
+                    search_term=search_term,
+                    location=self.location,
+                    results_wanted=self.results_wanted,
+
+                    hours_old=(
+                        self.posting_age_days * 24
+                        if self.posting_age_days is not None
+                        else None
+                    ),
+
+                    country_indeed="USA",
+                    description_format="markdown",
+
+                    linkedin_fetch_description=False,
+
+                    verbose=0,
+                )
+
+            except Exception as e:
+
+                print(
+                    f"JobSpy {site} FAILED for "
+                    f"'{search_term}': "
+                    f"{type(e).__name__}: {e}"
+                )
+
+                continue
+
+            if jobs_dataframe.empty:
+                continue
+
+            print(
+                f"{site}      "
+                f"{len(jobs_dataframe)}"
+            )
+
+            for _, item in jobs_dataframe.iterrows():
+
+                # -------------------------------------------------
+                # Posting date
+                # -------------------------------------------------
+
+                posting_date = self._parse_posting_date(
+                    item.get("date_posted")
+                )
+
+                if self.posting_age_days is not None:
+
+                    if posting_date is None:
+                        continue
+
+                    now = datetime.now(
+                        timezone.utc
+                    )
+
+                    cutoff_date = (
+                        now -
+                        timedelta(
+                            days=self.posting_age_days
+                        )
+                    )
+
+                    if posting_date < cutoff_date:
+                        continue
+
+                # -------------------------------------------------
+                # Basic fields
+                # -------------------------------------------------
+
+                title = self._get_string(
+                    item.get("title")
+                )
+
+                company = self._get_string(
+                    item.get("company")
+                )
+
+                posting_url = self._get_string(
+                    item.get("job_url")
+                )
+
+                if not title:
+                    continue
+
+                if not company:
+                    continue
+
+                if not posting_url:
+                    continue
+
+                # -------------------------------------------------
+                # Job ID
+                # -------------------------------------------------
+
+                job_id = self._get_string(
+                    item.get("id")
+                )
+
+                # -------------------------------------------------
+                # Direct application URL
+                # -------------------------------------------------
+
+                apply_url = self._get_string(
+                    item.get("job_url_direct")
+                )
+
+                if not apply_url:
+                    apply_url = ""
+
+                # -------------------------------------------------
+                # Employment type
+                # -------------------------------------------------
+
+                employment_type = self._get_string(
+                    item.get("job_type")
+                )
+
+                # -------------------------------------------------
+                # Description
+                # -------------------------------------------------
+
+                description = clean_html_description(
+                    self._get_string(
+                        item.get("description")
                     )
                 )
 
-                if posting_date < cutoff_date:
-                    continue
+                # -------------------------------------------------
+                # Salary
+                # -------------------------------------------------
 
-            # -------------------------------------------------
-            # Basic fields
-            # -------------------------------------------------
-
-            title = self._get_string(
-                item.get("title")
-            )
-
-            company = self._get_string(
-                item.get("company")
-            )
-
-            posting_url = self._get_string(
-                item.get("job_url")
-            )
-
-            if not title:
-                continue
-
-            if not company:
-                continue
-
-            if not posting_url:
-                continue
-
-            # -------------------------------------------------
-            # Job ID
-            # -------------------------------------------------
-
-            job_id = self._get_string(
-                item.get("id")
-            )
-
-            # -------------------------------------------------
-            # Direct application URL
-            #
-            # JobSpy may provide job_url_direct for sources
-            # where a direct employer/application URL is
-            # available.
-            # -------------------------------------------------
-
-            apply_url = self._get_string(
-                item.get("job_url_direct")
-            )
-
-            # If JobSpy doesn't provide a direct URL,
-            # leave apply_url blank rather than incorrectly
-            # assuming the posting URL is an application URL.
-            if not apply_url:
-                apply_url = ""
-
-            # -------------------------------------------------
-            # Employment type
-            # -------------------------------------------------
-
-            employment_type = self._get_string(
-                item.get("job_type")
-            )
-
-            # -------------------------------------------------
-            # Description
-            # -------------------------------------------------
-
-            description = clean_html_description(
-                self._get_string(
-                    item.get("description")
+                salary = extract_salary(
+                    description
                 )
-            )
 
-            # -------------------------------------------------
-            # Salary
-            # -------------------------------------------------
+                # -------------------------------------------------
+                # Location
+                # -------------------------------------------------
 
-            salary = extract_salary(
-                description
-            )
+                location = self._get_string(
+                    item.get("location")
+                )
 
-            # -------------------------------------------------
-            # Location
-            # -------------------------------------------------
+                # -------------------------------------------------
+                # Source
+                # -------------------------------------------------
 
-            location = self._build_location(
-                item
-            )
+                source = self._get_source(
+                    item
+                )
 
-            # -------------------------------------------------
-            # Source
-            # -------------------------------------------------
+                # -------------------------------------------------
+                # Create common Job object
+                # -------------------------------------------------
 
-            source = self._get_source(
-                item
-            )
+                job = Job(
+                    company=company,
+                    title=title,
+                    location=location,
+                    posting_url=posting_url,
+                    description=description,
+                    posting_date=posting_date,
+                    salary=salary,
+                    source=source,
+                    apply_url=apply_url,
+                    employment_type=employment_type,
+                    job_id=job_id
+                )
 
-            # -------------------------------------------------
-            # Create common Job object
-            # -------------------------------------------------
-
-            job = Job(
-                company=company,
-                title=title,
-                location=location,
-                posting_url=posting_url,
-                description=description,
-                posting_date=posting_date,
-                salary=salary,
-                source=source,
-                apply_url=apply_url,
-                employment_type=employment_type,
-                job_id=job_id
-            )
-
-            jobs.append(job)
+                jobs.append(job)
 
         return jobs
+
+
+    # def search(
+    #     self,
+    #     search_term: str = ""
+    # ) -> list[Job]:
+
+    #     if not search_term.strip():
+    #         return []
+
+    #     jobs_dataframe = scrape_jobs(
+    #         site_name=self.sites,
+    #         search_term=search_term,
+    #         location=self.location,
+    #         results_wanted=self.results_wanted,
+
+    #         # Only retrieve jobs posted within the
+    #         # previous 24 hours.
+    #         hours_old=(
+    #             self.posting_age_days * 24
+    #             if self.posting_age_days is not None
+    #             else None
+    #         ),
+
+    #         country_indeed="USA",
+    #         description_format="markdown",
+
+    #         # Do not make additional LinkedIn requests
+    #         # to retrieve full descriptions/direct URLs.
+    #         linkedin_fetch_description=False,
+
+    #         verbose=0,
+    #     )
+
+    #     # print(
+    #     #     f"JobSpy returned {len(jobs_dataframe)} raw jobs "
+    #     #     f"for '{search_term}'"
+    #     # )
+
+    #     if not jobs_dataframe.empty:
+
+    #         print(
+    #             jobs_dataframe["site"]
+    #             .value_counts()
+    #             .to_string()
+    #         )
+
+    #     jobs = []
+
+    #     for _, item in jobs_dataframe.iterrows():
+
+    #         # print(f"{item.get("title")}  : {item.get("location")} \n");
+
+    #         # -------------------------------------------------
+    #         # Posting date
+    #         # -------------------------------------------------
+
+    #         posting_date = self._parse_posting_date(
+    #             item.get("date_posted")
+    #         )
+
+    #         # Apply the same posting-age validation
+    #         # after retrieval.
+    #         if self.posting_age_days is not None:
+
+    #             if posting_date is None:
+    #                 continue
+
+    #             now = datetime.now(
+    #                 timezone.utc
+    #             )
+
+    #             cutoff_date = (
+    #                 now -
+    #                 timedelta(
+    #                     days=self.posting_age_days
+    #                 )
+    #             )
+
+    #             if posting_date < cutoff_date:
+    #                 continue
+
+    #         # -------------------------------------------------
+    #         # Basic fields
+    #         # -------------------------------------------------
+
+    #         title = self._get_string(
+    #             item.get("title")
+    #         )
+
+    #         company = self._get_string(
+    #             item.get("company")
+    #         )
+
+    #         posting_url = self._get_string(
+    #             item.get("job_url")
+    #         )
+
+    #         if not title:
+    #             continue
+
+    #         if not company:
+    #             continue
+
+    #         if not posting_url:
+    #             continue
+
+    #         # -------------------------------------------------
+    #         # Job ID
+    #         # -------------------------------------------------
+
+    #         job_id = self._get_string(
+    #             item.get("id")
+    #         )
+
+    #         # -------------------------------------------------
+    #         # Direct application URL
+    #         #
+    #         # JobSpy may provide job_url_direct for sources
+    #         # where a direct employer/application URL is
+    #         # available.
+    #         # -------------------------------------------------
+
+    #         apply_url = self._get_string(
+    #             item.get("job_url_direct")
+    #         )
+
+    #         # If JobSpy doesn't provide a direct URL,
+    #         # leave apply_url blank rather than incorrectly
+    #         # assuming the posting URL is an application URL.
+    #         if not apply_url:
+    #             apply_url = ""
+
+    #         # -------------------------------------------------
+    #         # Employment type
+    #         # -------------------------------------------------
+
+    #         employment_type = self._get_string(
+    #             item.get("job_type")
+    #         )
+
+    #         # -------------------------------------------------
+    #         # Description
+    #         # -------------------------------------------------
+
+    #         description = clean_html_description(
+    #             self._get_string(
+    #                 item.get("description")
+    #             )
+    #         )
+
+    #         # -------------------------------------------------
+    #         # Salary
+    #         # -------------------------------------------------
+
+    #         salary = extract_salary(
+    #             description
+    #         )
+
+    #         # -------------------------------------------------
+    #         # Location
+    #         # -------------------------------------------------
+    #         location = self._get_string(
+    #             item.get("location")
+    #         )
+
+    #         # -------------------------------------------------
+    #         # Source
+    #         # -------------------------------------------------
+
+    #         source = self._get_source(
+    #             item
+    #         )
+
+    #         # -------------------------------------------------
+    #         # Create common Job object
+    #         # -------------------------------------------------
+
+    #         job = Job(
+    #             company=company,
+    #             title=title,
+    #             location=location,
+    #             posting_url=posting_url,
+    #             description=description,
+    #             posting_date=posting_date,
+    #             salary=salary,
+    #             source=source,
+    #             apply_url=apply_url,
+    #             employment_type=employment_type,
+    #             job_id=job_id
+    #         )
+
+    #         jobs.append(job)
+
+    #     return jobs
 
     @staticmethod
     def _parse_posting_date(

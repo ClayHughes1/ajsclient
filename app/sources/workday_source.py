@@ -1,15 +1,12 @@
 import re
 import time
-
 from datetime import datetime, timedelta, timezone
-
 import requests
-
 from app.models.job import Job
 from app.sources.job_source import JobSource
 from app.utils.html_cleaner import clean_html_description
 from app.utils.salary_extractor import extract_salary
-
+# from app.utils.career_pages_storage import (load_career_pages)
 
 class WorkdaySource(JobSource):
 
@@ -144,13 +141,6 @@ class WorkdaySource(JobSource):
             if not job_postings:
                 break
 
-            if self.company_name == "Bank of America" or self.company_name == "Northrop Grumman":
-
-                print(
-                    f"{self.company_name} returned "
-                    f"{len(job_postings)} job postings."
-                )
-
             # -----------------------------------------------------
             # Process lightweight job summaries.
             #
@@ -165,7 +155,7 @@ class WorkdaySource(JobSource):
             # -----------------------------------------------------
 
             for item in job_postings:
-
+                # print(f"Item: company name: {self.company_name}  location text:   {item.get("locationsText")}  job title:  {item.get("title")}")
                 # -------------------------------------------------
                 # 1. Posting age filter.
                 # -------------------------------------------------
@@ -326,6 +316,23 @@ class WorkdaySource(JobSource):
 
         detail = self._get_job_detail(
             external_path
+        )
+
+        # ---------------------------------------------------------
+        # Resolve actual locations.
+        #
+        # Replaces values such as:
+        #
+        #     "2 Locations"
+        #     "6 Locations"
+        #
+        # with the actual locations returned by
+        # the Workday job detail endpoint.
+        # ---------------------------------------------------------
+
+        location = self._extract_locations(
+            item,
+            detail
         )
 
         description = ""
@@ -828,3 +835,64 @@ class WorkdaySource(JobSource):
             )
 
         return None
+
+    def _extract_locations(
+        self,
+        item: dict,
+        detail: dict | None
+    ) -> str:
+
+        location_text = self._get_string(
+            item.get("locationsText")
+        )
+
+        if not detail:
+            return location_text
+
+        job_info = detail.get(
+            "jobPostingInfo",
+            {}
+        )
+
+        locations = []
+
+        primary_location = self._get_string(
+            job_info.get("location")
+        )
+
+        if primary_location:
+            locations.append(
+                primary_location
+            )
+
+        additional_locations = job_info.get(
+            "additionalLocations",
+            []
+        )
+
+        if isinstance(
+            additional_locations,
+            list
+        ):
+
+            for location in additional_locations:
+
+                location = self._get_string(
+                    location
+                )
+
+                if (
+                    location
+                    and location not in locations
+                ):
+                    locations.append(
+                        location
+                    )
+
+        if locations:
+            return "; ".join(
+                locations
+            )
+
+        return location_text
+  
