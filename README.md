@@ -22,6 +22,8 @@ The application is designed to:
 - Run  ".\.venv312\Scripts\Activate.ps1" in powershell to switch to the correct virtual environmentimplementing 
 - JobSpy requires either python 3.12.0 to 3.13.0 and cannot run in venv 314
 - powershell script execute & "C:\Users\clayh\projects\ajsclient-new\ajsclient\run_daily_job_search.ps1"
+- start the project powershell command
+- cd "C:\Users\clayh\projects\ajsclient-new\ajsclient"; .\.venv312\Scripts\Activate.ps1; py -m app.main
 
 ## Architecture
 

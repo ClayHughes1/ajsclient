@@ -211,9 +211,8 @@ class CompanyCareersSource:
         career_urls = self.generate_career_urls(
             company_name
         )
-
+       
         for url in career_urls:
-
             try:
 
                 validated_url = self.validate_url(
@@ -221,21 +220,27 @@ class CompanyCareersSource:
                 )
 
             except Exception:
-
+                print(f" Exception")
                 continue
 
             if not validated_url:
                 continue
 
-            print(
-                f"    VALID career page: "
-                f"{validated_url}"
-            )
+            # print(
+            #     f"    VALID career page: "
+            #     f"{validated_url}"
+            # )
 
             result = {
                 "companyName": company_name,
                 "careerpageurl": validated_url
             }
+
+            # print(
+            #     f"\nCompany: {result['companyName']}\n"
+            #     f"Career Page: {result['careerpageurl']}\n"
+            # )
+
 
             # Keep the existing behavior of recording newly
             # discovered results so the existing main.py logic
@@ -243,13 +248,12 @@ class CompanyCareersSource:
             self.validated_career_links.append(
                 result
             )
-
+            # print(f"Valid URL:  {validated_url}")
             return validated_url
 
         # ---------------------------------------------------------
         # No valid career page found.
         # ---------------------------------------------------------
-
         return None
 
 
@@ -356,6 +360,7 @@ class CompanyCareersSource:
         )
 
         domains = [
+            f"{domain_name}-llc.com",
 
             f"{domain_name}.com",
             f"www.{domain_name}.com",
