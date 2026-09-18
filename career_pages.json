@@ -427,6 +427,214 @@
         {
             "companyName": "Ubiminds",
             "careerpageurl": "https://ubiminds.com/en-us/careers/"
+        },
+        {
+            "companyName": "BAE Systems",
+            "careerpageurl": "https://www.baesystems.com/careers"
+        },
+        {
+            "companyName": "Grainger",
+            "careerpageurl": "https://www.grainger.com/careers"
+        },
+        {
+            "companyName": "Arm",
+            "careerpageurl": "https://careers.arm.com/"
+        },
+        {
+            "companyName": "Optum",
+            "careerpageurl": "https://www.optum.com/en/careers.html"
+        },
+        {
+            "companyName": "GovCIO",
+            "careerpageurl": "https://govcio.com/jobs/"
+        },
+        {
+            "companyName": "Adobe",
+            "careerpageurl": "https://careers.adobe.com/us/en"
+        },
+        {
+            "companyName": "conocophillips",
+            "careerpageurl": "https://careers.conocophillips.com/"
+        },
+        {
+            "companyName": "Uber",
+            "careerpageurl": "https://jobs.uber.com/en/"
+        },
+        {
+            "companyName": "Marketron",
+            "careerpageurl": "https://www.marketron.com/about/#careers"
+        },
+        {
+            "companyName": "Echodyne",
+            "careerpageurl": "https://www.echodyne.com/careers"
+        },
+        {
+            "companyName": "Realign",
+            "careerpageurl": "https://realign-llc.com/careers/"
+        },
+        {
+            "companyName": "Chartbeat",
+            "careerpageurl": "https://chartbeat.com/signin/"
+        },
+        {
+            "companyName": "Relativity Space",
+            "careerpageurl": "https://www.relativityspace.com/careers"
+        },
+        {
+            "companyName": "Embree Partners",
+            "careerpageurl": "https://embreepartners.com/careers"
+        },
+        {
+            "companyName": "Bose",
+            "careerpageurl": "https://careers.bose.com/us/en"
+        },
+        {
+            "companyName": "Collectors",
+            "careerpageurl": "https://www.collectors.com/careers"
+        },
+        {
+            "companyName": "Mirakl",
+            "careerpageurl": "https://www.mirakl.com/company/careers/"
+        },
+        {
+            "companyName": "Engine",
+            "careerpageurl": "https://engine.com/careers"
+        },
+        {
+            "companyName": "Fieldguide",
+            "careerpageurl": "https://www.fieldguide.com/careers"
+        },
+        {
+            "companyName": "Vercel",
+            "careerpageurl": "https://vercel.com/login?next=%2Fall-jobs"
+        },
+        {
+            "companyName": "Caterpillar",
+            "careerpageurl": "https://careers.caterpillar.com/jobs"
+        },
+        {
+            "companyName": "PagerDuty",
+            "careerpageurl": "https://careers.pagerduty.com/"
+        },
+        {
+            "companyName": "Vail Systems",
+            "careerpageurl": "https://www.vailsys.com"
+        },
+        {
+            "companyName": "Expedia Group",
+            "careerpageurl": "https://careers.expediagroup.com"
+        },
+        {
+            "companyName": "Toast",
+            "careerpageurl": "https://toast-llc.com/careers"
+        },
+        {
+            "companyName": "FareHarbor",
+            "careerpageurl": "https://fareharbor.com/careers/"
+        },
+        {
+            "companyName": "BlackRock",
+            "careerpageurl": "https://careers.blackrock.com"
+        },
+        {
+            "companyName": "Graphcore",
+            "careerpageurl": "https://www.graphcore.ai/careers"
+        },
+        {
+            "companyName": "2K",
+            "careerpageurl": "https://2k.com/careers/"
+        },
+        {
+            "companyName": "MongoDB",
+            "careerpageurl": "https://www.mongodb.com/company/careers"
+        },
+        {
+            "companyName": "Cox Enterprises",
+            "careerpageurl": "https://www.coxenterprises.com/"
+        },
+        {
+            "companyName": "AlertMedia",
+            "careerpageurl": "https://www.alertmedia.com/careers"
+        },
+        {
+            "companyName": "Kepler",
+            "careerpageurl": "https://keplerhq.com/careers"
+        },
+        {
+            "companyName": "T-Mobile",
+            "careerpageurl": "https://careers.t-mobile.com"
+        },
+        {
+            "companyName": "EchoStar",
+            "careerpageurl": "https://echostar.com/careers"
+        },
+        {
+            "companyName": "Zscaler",
+            "careerpageurl": "https://www.zscaler.com:443/careers"
+        },
+        {
+            "companyName": "Riot Platforms",
+            "careerpageurl": "https://www.riotplatforms.com/careers/"
+        },
+        {
+            "companyName": "Benchling",
+            "careerpageurl": "https://www.benchling.com/careers"
+        },
+        {
+            "companyName": "Xero",
+            "careerpageurl": "https://careers.xero.com"
+        },
+        {
+            "companyName": "Spark Advisors",
+            "careerpageurl": "https://www.sparkadvisors.com/careers"
+        },
+        {
+            "companyName": "FloQast",
+            "careerpageurl": "https://www.floqast.com/careers"
+        },
+        {
+            "companyName": "Vantor",
+            "careerpageurl": "https://vantor.com/careers/"
+        },
+        {
+            "companyName": "Airwallex",
+            "careerpageurl": "https://careers.airwallex.com"
+        },
+        {
+            "companyName": "Metropolis Technologies",
+            "careerpageurl": "https://metropolistechnologies.com/careers"
+        },
+        {
+            "companyName": "New York Life Insurance",
+            "careerpageurl": "https://www.newyorklife.com"
+        },
+        {
+            "companyName": "Snap",
+            "careerpageurl": "https://snap-llc.com/careers"
+        },
+        {
+            "companyName": "Braze",
+            "careerpageurl": "https://www.braze.com/company/careers"
+        },
+        {
+            "companyName": "Vetcove",
+            "careerpageurl": "https://shop.vetcove.com/careers/"
+        },
+        {
+            "companyName": "Ibotta",
+            "careerpageurl": "https://ibotta.com/work-with-us/careers"
+        },
+        {
+            "companyName": "Imprivata",
+            "careerpageurl": "https://www.imprivata.com/company/careers"
+        },
+        {
+            "companyName": "Adyen",
+            "careerpageurl": "https://careers.adyen.com/"
+        },
+        {
+            "companyName": "Kegman Inc",
+            "careerpageurl": "https://kegmaninc.com/careers/"
         }
     ]
 }

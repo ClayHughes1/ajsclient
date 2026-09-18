@@ -1,12 +1,14 @@
+import asyncio
 import re
-import time
+import httpx
+
 from datetime import datetime, timedelta, timezone
-import requests
+
 from app.models.job import Job
 from app.sources.job_source import JobSource
 from app.utils.html_cleaner import clean_html_description
 from app.utils.salary_extractor import extract_salary
-# from app.utils.career_pages_storage import (load_career_pages)
+
 
 class WorkdaySource(JobSource):
 
@@ -29,23 +31,34 @@ class WorkdaySource(JobSource):
         self.max_retries = max_retries
 
         # ---------------------------------------------------------
-        # Reuse HTTP connections.
+        # Async HTTP client.
+        #
+        # The client is created once and reused for all requests
+        # made by this WorkdaySource instance.
         # ---------------------------------------------------------
 
-        self.session = requests.Session()
+        self.session = httpx.AsyncClient(
+            timeout=30.0,
+            headers={
+                "Accept": "application/json",
+                "User-Agent": (
+                    "Mozilla/5.0 "
+                    "(Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) "
+                    "Chrome/140.0 Safari/537.36"
+                )
+            }
+        )
 
-        self.session.headers.update({
-            "Accept": "application/json",
-            "User-Agent": (
-                "Mozilla/5.0 "
-                "(Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36 "
-                "(KHTML, like Gecko) "
-                "Chrome/140.0 Safari/537.36"
-            )
-        })
+        # ---------------------------------------------------------
+        # Limit concurrent detail requests.
+        #
+        # This prevents one Workday company from generating a
+        # large burst of requests.
+        # ---------------------------------------------------------
 
-        self._last_request_time = None
+        self.detail_semaphore = asyncio.Semaphore(5)
 
         # ---------------------------------------------------------
         # Parse Workday URL.
@@ -67,10 +80,23 @@ class WorkdaySource(JobSource):
         )
 
     # =============================================================
+    # CLOSE
+    # =============================================================
+
+    async def close(self):
+        """
+        Close the reusable async HTTP client.
+        """
+
+        if not self.session.is_closed:
+
+            await self.session.aclose()
+
+    # =============================================================
     # SEARCH
     # =============================================================
 
-    def search(
+    async def search(
         self,
         search_terms: list[str] | None = None
     ) -> list[Job]:
@@ -86,16 +112,6 @@ class WorkdaySource(JobSource):
 
         while True:
 
-            # -----------------------------------------------------
-            # Request only the lightweight Workday job listing.
-            #
-            # We intentionally do NOT send search_terms as
-            # searchText because some Workday tenants fail when
-            # searchText contains certain values.
-            #
-            # Title filtering is performed locally below.
-            # -----------------------------------------------------
-
             payload = {
                 "appliedFacets": {},
                 "limit": limit,
@@ -104,7 +120,7 @@ class WorkdaySource(JobSource):
 
             try:
 
-                response = self._request(
+                response = await self._request(
                     "POST",
                     self.jobs_url,
                     json=payload,
@@ -115,7 +131,7 @@ class WorkdaySource(JobSource):
 
                 data = response.json()
 
-            except requests.RequestException as error:
+            except httpx.RequestError as error:
 
                 print(
                     f"Workday request failed for "
@@ -142,20 +158,19 @@ class WorkdaySource(JobSource):
                 break
 
             # -----------------------------------------------------
-            # Process lightweight job summaries.
+            # Perform inexpensive local filtering first.
             #
-            # IMPORTANT:
+            # We do NOT request job details until a posting:
             #
-            # We deliberately perform the inexpensive filters
-            # BEFORE calling _normalize_job().
-            #
-            # _normalize_job() makes the secondary Workday detail
-            # request. Therefore, jobs that fail either filter
-            # never cause a detail request.
+            #   1. Is recent
+            #   2. Has a title
+            #   3. Matches the configured search terms
             # -----------------------------------------------------
 
+            matching_items = []
+
             for item in job_postings:
-                # print(f"Item: company name: {self.company_name}  location text:   {item.get("locationsText")}  job title:  {item.get("title")}")
+
                 # -------------------------------------------------
                 # 1. Posting age filter.
                 # -------------------------------------------------
@@ -178,8 +193,6 @@ class WorkdaySource(JobSource):
 
                 # -------------------------------------------------
                 # 3. Search-term/title filter.
-                #
-                # This happens BEFORE _normalize_job().
                 # -------------------------------------------------
 
                 if not self._title_matches_search_terms(
@@ -188,16 +201,45 @@ class WorkdaySource(JobSource):
                 ):
                     continue
 
-                # -------------------------------------------------
-                # 4. Only now retrieve the full job detail.
-                # -------------------------------------------------
-
-                job = self._normalize_job(
+                matching_items.append(
                     item
                 )
 
-                if job:
-                    jobs.append(job)
+            # -----------------------------------------------------
+            # Retrieve matching job details concurrently.
+            # -----------------------------------------------------
+
+            if matching_items:
+
+                detail_tasks = [
+                    self._normalize_job_async(
+                        item
+                    )
+                    for item in matching_items
+                ]
+
+                detail_results = await asyncio.gather(
+                    *detail_tasks,
+                    return_exceptions=True
+                )
+
+                for job in detail_results:
+
+                    if isinstance(
+                        job,
+                        Exception
+                    ):
+
+                        print(
+                            f"Workday detail request failed "
+                            f"for {self.company_name}: "
+                            f"{job}"
+                        )
+
+                        continue
+
+                    if job:
+                        jobs.append(job)
 
             # -----------------------------------------------------
             # Pagination.
@@ -215,17 +257,17 @@ class WorkdaySource(JobSource):
                     break
 
             # -----------------------------------------------------
-            # If Workday returned fewer than the requested number,
-            # there normally isn't another page.
+            # If Workday returned fewer than requested, there is
+            # normally no additional page.
             # -----------------------------------------------------
 
             if len(job_postings) < limit:
                 break
 
-        print(
-            f"Workday returned {len(jobs)} matching jobs "
-            f"for {self.company_name}."
-        )
+        # print(
+        #     f"Workday returned {len(jobs)} matching jobs "
+        #     f"for {self.company_name}."
+        # )
 
         return jobs
 
@@ -233,7 +275,7 @@ class WorkdaySource(JobSource):
     # NORMALIZE JOB
     # =============================================================
 
-    def _normalize_job(
+    async def _normalize_job_async(
         self,
         item: dict
     ) -> Job | None:
@@ -305,29 +347,15 @@ class WorkdaySource(JobSource):
         )
 
         # ---------------------------------------------------------
-        # ONLY NOW request the full job detail.
-        #
-        # This method is only called after:
-        #
-        #   1. Posting age passed
-        #   2. Title exists
-        #   3. Title matched search_terms
+        # Retrieve full job detail asynchronously.
         # ---------------------------------------------------------
 
-        detail = self._get_job_detail(
+        detail = await self._get_job_detail(
             external_path
         )
 
         # ---------------------------------------------------------
         # Resolve actual locations.
-        #
-        # Replaces values such as:
-        #
-        #     "2 Locations"
-        #     "6 Locations"
-        #
-        # with the actual locations returned by
-        # the Workday job detail endpoint.
         # ---------------------------------------------------------
 
         location = self._extract_locations(
@@ -409,7 +437,49 @@ class WorkdaySource(JobSource):
     # JOB DETAIL
     # =============================================================
 
-    def _get_job_detail(
+    # async def _get_job_detail(
+    #     self,
+    #     external_path: str
+    # ) -> dict | None:
+
+    #     detail_url = (
+    #         f"{self.origin}"
+    #         f"/wday/cxs/"
+    #         f"{self.tenant}/"
+    #         f"{self.site}"
+    #         f"{external_path}"
+    #     )
+
+    #     try:
+
+    #         async with self._detail_slot():
+
+    #             response = await self._request(
+    #                 "GET",
+    #                 detail_url
+    #             )
+
+    #         return response.json()
+
+    #     except httpx.RequestError as error:
+
+    #         print(
+    #             f"Workday detail request failed for "
+    #             f"{self.company_name}: {error}"
+    #         )
+
+    #         return None
+
+    #     except ValueError as error:
+
+    #         print(
+    #             f"Workday detail returned invalid JSON for "
+    #             f"{self.company_name}: {error}"
+    #         )
+
+    #         return None
+
+    async def _get_job_detail(
         self,
         external_path: str
     ) -> dict | None:
@@ -424,14 +494,16 @@ class WorkdaySource(JobSource):
 
         try:
 
-            response = self._request(
-                "GET",
-                detail_url
-            )
+            async with self.detail_semaphore:
+
+                response = await self._request(
+                    "GET",
+                    detail_url
+                )
 
             return response.json()
 
-        except requests.RequestException as error:
+        except httpx.RequestError as error:
 
             print(
                 f"Workday detail request failed for "
@@ -449,11 +521,32 @@ class WorkdaySource(JobSource):
 
             return None
 
+
+    # =============================================================
+    # DETAIL REQUEST CONCURRENCY
+    # =============================================================
+
+    class _detail_slot:
+
+        def __init__(self):
+            self.source = None
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(
+            self,
+            exc_type,
+            exc,
+            traceback
+        ):
+            return False
+
     # =============================================================
     # HTTP REQUEST
     # =============================================================
 
-    def _request(
+    async def _request(
         self,
         method: str,
         url: str,
@@ -466,16 +559,9 @@ class WorkdaySource(JobSource):
 
             try:
 
-                self._wait_before_request()
-
-                self._last_request_time = (
-                    time.monotonic()
-                )
-
-                response = self.session.request(
+                response = await self.session.request(
                     method,
                     url,
-                    timeout=30,
                     **kwargs
                 )
 
@@ -518,7 +604,7 @@ class WorkdaySource(JobSource):
                         f"Waiting {wait_seconds} seconds..."
                     )
 
-                    time.sleep(
+                    await asyncio.sleep(
                         wait_seconds
                     )
 
@@ -552,7 +638,7 @@ class WorkdaySource(JobSource):
                         f"Retrying in {wait_seconds} seconds..."
                     )
 
-                    time.sleep(
+                    await asyncio.sleep(
                         wait_seconds
                     )
 
@@ -562,10 +648,7 @@ class WorkdaySource(JobSource):
 
                 return response
 
-            except requests.RequestException as error:
-
-                if error.response is not None:
-                    raise
+            except httpx.RequestError as error:
 
                 if attempt >= self.max_retries:
                     raise
@@ -581,32 +664,11 @@ class WorkdaySource(JobSource):
                     f"Retrying in {wait_seconds} seconds..."
                 )
 
-                time.sleep(
+                await asyncio.sleep(
                     wait_seconds
                 )
 
         return None
-
-    def _wait_before_request(self):
-
-        if self._last_request_time is None:
-            return
-
-        elapsed = (
-            time.monotonic()
-            - self._last_request_time
-        )
-
-        remaining = (
-            self.request_delay_seconds
-            - elapsed
-        )
-
-        if remaining > 0:
-
-            time.sleep(
-                remaining
-            )
 
     # =============================================================
     # POSTING AGE
@@ -664,7 +726,9 @@ class WorkdaySource(JobSource):
             ).strip().lower()
 
             if term and term not in normalized:
-                normalized.append(term)
+                normalized.append(
+                    term
+                )
 
         return normalized
 
@@ -885,14 +949,15 @@ class WorkdaySource(JobSource):
                     location
                     and location not in locations
                 ):
+
                     locations.append(
                         location
                     )
 
         if locations:
+
             return "; ".join(
                 locations
             )
 
         return location_text
-  

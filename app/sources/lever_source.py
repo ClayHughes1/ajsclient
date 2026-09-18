@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
-
+import httpx
 import requests
+import asyncio
 
 from app.models.job import Job
 from app.sources.job_source import JobSource
@@ -8,7 +9,7 @@ from app.utils.html_cleaner import clean_html_description
 from app.utils.salary_extractor import extract_salary
 
 
-class LeverSource(JobSource):
+class LeverSource:
 
     BASE_URL = "https://api.lever.co/v0/postings"
 
@@ -16,25 +17,26 @@ class LeverSource(JobSource):
         self,
         company_name: str,
         company_token: str,
-        posting_age_days: int = 2
+        posting_age_days: int | None,
+        client: httpx.AsyncClient,
     ):
         self.company_name = company_name
         self.company_token = company_token
         self.posting_age_days = posting_age_days
-
-    def search(self, search_term: str = "") -> list[Job]:
+        self.client = client
+        
+    async def search(self, search_term: str = "") -> list[Job]:
 
         url = (
             f"{self.BASE_URL}/"
             f"{self.company_token}"
         )
 
-        response = requests.get(
+        response = await self.client.get(
             url,
             params={
                 "mode": "json"
-            },
-            timeout=30
+            }
         )
 
         if response.status_code == 404:
@@ -50,6 +52,24 @@ class LeverSource(JobSource):
         data = response.json()
 
         jobs = []
+
+        # -----------------------------------------
+        # Posting age cutoff
+        # -----------------------------------------
+
+        cutoff_date = None
+
+        if self.posting_age_days is not None:
+            cutoff_date = (
+                datetime.now(timezone.utc)
+                - timedelta(
+                    days=self.posting_age_days
+                )
+            )
+
+        # -----------------------------------------
+        # Process postings
+        # -----------------------------------------
 
         for item in data:
 
@@ -100,23 +120,13 @@ class LeverSource(JobSource):
                     tz=timezone.utc
                 )
 
-                if self.posting_age_days is not None:
+                if (
+                    cutoff_date is not None
+                    and posting_date < cutoff_date
+                ):
+                    continue
 
-                    now = datetime.now(
-                        timezone.utc
-                    )
-
-                    cutoff_date = (
-                        now -
-                        timedelta(
-                            days=self.posting_age_days
-                        )
-                    )
-
-                    if posting_date < cutoff_date:
-                        continue
-
-            elif self.posting_age_days is not None:
+            elif cutoff_date is not None:
 
                 # We cannot verify posting age.
                 continue
@@ -130,31 +140,10 @@ class LeverSource(JobSource):
                 {}
             )
 
-            # locations = categories.get(
-            #     "allLocations",
-            #     []
-            # )
-
             location = categories.get(
-                "location",
-                "")
-            print(f" Location:  {location}")
-
-            primary_location = categories.get(
                 "location",
                 ""
             )
-            print(f"Primary Location:  {primary_location}")
-            # if not locations and primary_location:
-            #     locations = [
-            #         primary_location
-            #     ]
-
-            # location = "; ".join(
-            #     str(value)
-            #     for value in locations
-            #     if value
-            # )
 
             # -----------------------------------------
             # Employment type
@@ -172,11 +161,6 @@ class LeverSource(JobSource):
             # Description
             # -----------------------------------------
 
-            # content = item.get(
-            #     "content",
-            #     {}
-            # )
-
             description = clean_html_description(
                 item.get(
                     "descriptionPlain",
@@ -184,15 +168,6 @@ class LeverSource(JobSource):
                 )
             )
 
-            # print(f"description: {description}")
-
-            # description = clean_html_description(
-            #     content.get(
-            #         "description",
-            #         ""
-            #     )
-            # )
-            # print(f"description: {description}")
             # -----------------------------------------
             # Salary
             # -----------------------------------------
@@ -223,7 +198,7 @@ class LeverSource(JobSource):
                         ""
                     )
 
-                    if minimum and maximum:
+                    if minimum is not None and maximum is not None:
 
                         salary = (
                             f"{currency} "
@@ -231,7 +206,7 @@ class LeverSource(JobSource):
                             f"{maximum:,}"
                         )
 
-                    elif minimum:
+                    elif minimum is not None:
 
                         salary = (
                             f"{currency} "
@@ -246,6 +221,7 @@ class LeverSource(JobSource):
             # -----------------------------------------
             # URLs
             # -----------------------------------------
+
             posting_url = item.get(
                 "hostedUrl",
                 ""
@@ -255,21 +231,6 @@ class LeverSource(JobSource):
                 "applyUrl",
                 ""
             )
-
-            # urls = item.get(
-            #     "urls",
-            #     {}
-            # )
-
-            # posting_url = urls.get(
-            #     "show",
-            #     ""
-            # )
-
-            # apply_url = urls.get(
-            #     "apply",
-            #     ""
-            # )
 
             # If Lever doesn't provide a separate
             # application URL, use the posting URL.
@@ -287,10 +248,7 @@ class LeverSource(JobSource):
                     f"{description}"
                 ).lower()
 
-                if (
-                    search_term.lower()
-                    not in searchable_text
-                ):
+                if search_term.lower() not in searchable_text:
                     continue
 
             # -----------------------------------------
@@ -314,6 +272,301 @@ class LeverSource(JobSource):
             jobs.append(job)
 
         return jobs
+
+
+    # async def search(self, search_term: str = "") -> list[Job]:
+    # # def search(self, search_term: str = "") -> list[Job]:
+
+    #     url = (
+    #         f"{self.BASE_URL}/"
+    #         f"{self.company_token}"
+    #     )
+
+    #     response = requests.get(
+    #         url,
+    #         params={
+    #             "mode": "json"
+    #         },
+    #         timeout=30
+    #     )
+
+    #     if response.status_code == 404:
+    #         print(
+    #             f"Lever board not found: "
+    #             f"{self.company_name} "
+    #             f"({self.company_token}) - skipping."
+    #         )
+    #         return []
+
+    #     response.raise_for_status()
+
+    #     data = response.json()
+
+    #     jobs = []
+
+    #     for item in data:
+
+    #         # -----------------------------------------
+    #         # Lever posting status
+    #         # -----------------------------------------
+
+    #         if item.get("state") not in (
+    #             None,
+    #             "published"
+    #         ):
+    #             continue
+
+    #         # -----------------------------------------
+    #         # Job title
+    #         # -----------------------------------------
+
+    #         title = item.get(
+    #             "text",
+    #             ""
+    #         )
+
+    #         # -----------------------------------------
+    #         # Job ID
+    #         # -----------------------------------------
+
+    #         job_id = str(
+    #             item.get(
+    #                 "id",
+    #                 ""
+    #             )
+    #         )
+
+    #         # -----------------------------------------
+    #         # Posting date
+    #         # -----------------------------------------
+
+    #         created_at = item.get(
+    #             "createdAt"
+    #         )
+
+    #         posting_date = None
+
+    #         if created_at:
+
+    #             posting_date = datetime.fromtimestamp(
+    #                 created_at / 1000,
+    #                 tz=timezone.utc
+    #             )
+
+    #             if self.posting_age_days is not None:
+
+    #                 now = datetime.now(
+    #                     timezone.utc
+    #                 )
+
+    #                 cutoff_date = (
+    #                     now -
+    #                     timedelta(
+    #                         days=self.posting_age_days
+    #                     )
+    #                 )
+
+    #                 if posting_date < cutoff_date:
+    #                     continue
+
+    #         elif self.posting_age_days is not None:
+
+    #             # We cannot verify posting age.
+    #             continue
+
+    #         # -----------------------------------------
+    #         # Location
+    #         # -----------------------------------------
+
+    #         categories = item.get(
+    #             "categories",
+    #             {}
+    #         )
+
+    #         # locations = categories.get(
+    #         #     "allLocations",
+    #         #     []
+    #         # )
+
+    #         location = categories.get(
+    #             "location",
+    #             "")
+    #         # print(f" Location:  {location}")
+
+    #         # primary_location = categories.get(
+    #         #     "location",
+    #         #     ""
+    #         # )
+    #         # print(f"Primary Location:  {primary_location}")
+    #         # if not locations and primary_location:
+    #         #     locations = [
+    #         #         primary_location
+    #         #     ]
+
+    #         # location = "; ".join(
+    #         #     str(value)
+    #         #     for value in locations
+    #         #     if value
+    #         # )
+
+    #         # -----------------------------------------
+    #         # Employment type
+    #         #
+    #         # Lever uses "commitment" for values such
+    #         # as Full-time, Part-time, Contract, etc.
+    #         # -----------------------------------------
+
+    #         employment_type = categories.get(
+    #             "commitment",
+    #             ""
+    #         )
+
+    #         # -----------------------------------------
+    #         # Description
+    #         # -----------------------------------------
+
+    #         # content = item.get(
+    #         #     "content",
+    #         #     {}
+    #         # )
+
+    #         description = clean_html_description(
+    #             item.get(
+    #                 "descriptionPlain",
+    #                 ""
+    #             )
+    #         )
+
+    #         # print(f"description: {description}")
+
+    #         # description = clean_html_description(
+    #         #     content.get(
+    #         #         "description",
+    #         #         ""
+    #         #     )
+    #         # )
+    #         # print(f"description: {description}")
+    #         # -----------------------------------------
+    #         # Salary
+    #         # -----------------------------------------
+
+    #         salary = item.get(
+    #             "salaryDescription",
+    #             ""
+    #         )
+
+    #         if not salary:
+
+    #             salary_range = item.get(
+    #                 "salaryRange"
+    #             )
+
+    #             if salary_range:
+
+    #                 minimum = salary_range.get(
+    #                     "min"
+    #                 )
+
+    #                 maximum = salary_range.get(
+    #                     "max"
+    #                 )
+
+    #                 currency = salary_range.get(
+    #                     "currency",
+    #                     ""
+    #                 )
+
+    #                 if minimum and maximum:
+
+    #                     salary = (
+    #                         f"{currency} "
+    #                         f"{minimum:,} - "
+    #                         f"{maximum:,}"
+    #                     )
+
+    #                 elif minimum:
+
+    #                     salary = (
+    #                         f"{currency} "
+    #                         f"{minimum:,}+"
+    #                     )
+
+    #         if not salary:
+    #             salary = extract_salary(
+    #                 description
+    #             )
+
+    #         # -----------------------------------------
+    #         # URLs
+    #         # -----------------------------------------
+    #         posting_url = item.get(
+    #             "hostedUrl",
+    #             ""
+    #         )
+
+    #         apply_url = item.get(
+    #             "applyUrl",
+    #             ""
+    #         )
+
+    #         # urls = item.get(
+    #         #     "urls",
+    #         #     {}
+    #         # )
+
+    #         # posting_url = urls.get(
+    #         #     "show",
+    #         #     ""
+    #         # )
+
+    #         # apply_url = urls.get(
+    #         #     "apply",
+    #         #     ""
+    #         # )
+
+    #         # If Lever doesn't provide a separate
+    #         # application URL, use the posting URL.
+    #         if not apply_url:
+    #             apply_url = posting_url
+
+    #         # -----------------------------------------
+    #         # Search term
+    #         # -----------------------------------------
+
+    #         if search_term:
+
+    #             searchable_text = (
+    #                 f"{title} "
+    #                 f"{description}"
+    #             ).lower()
+
+    #             if (
+    #                 search_term.lower()
+    #                 not in searchable_text
+    #             ):
+    #                 continue
+
+    #         # -----------------------------------------
+    #         # Create common Job object
+    #         # -----------------------------------------
+
+    #         job = Job(
+    #             company=self.company_name,
+    #             title=title,
+    #             location=location,
+    #             posting_url=posting_url,
+    #             description=description,
+    #             posting_date=posting_date,
+    #             salary=salary,
+    #             source="Lever",
+    #             apply_url=apply_url,
+    #             employment_type=employment_type,
+    #             job_id=job_id
+    #         )
+
+    #         jobs.append(job)
+
+    #     return jobs
 
 
 

@@ -6,6 +6,7 @@ from app.models.job import Job
 from app.sources.job_source import JobSource
 from app.utils.html_cleaner import clean_html_description
 from app.utils.salary_extractor import extract_salary
+from requests.exceptions import HTTPError
 
 
 class GreenhouseSource(JobSource):
@@ -29,10 +30,50 @@ class GreenhouseSource(JobSource):
             f"{self.board_token}/jobs"
         )
 
+        # try:
+
+        #         response = requests.get(
+        #             url,
+        #             params={"content": "true"},
+        #             timeout=30
+        #         )
+
+        #         response.raise_for_status()
+
+        # except HTTPError as exc:
+
+        #     # -----------------------------------------------------
+        #     # Greenhouse board does not exist or is no longer
+        #     # available at this board token.
+        #     #
+        #     # Return an empty list so the caller can continue
+        #     # processing the remaining companies.
+        #     # -----------------------------------------------------
+
+        #     if response.status_code == 404:
+
+        #         print(
+        #             f"  WARNING: Greenhouse board not found: "
+        #             f"{self.company_name} "
+        #             f"({self.board_token})"
+        #         )
+
+        #         return []
+
+        #     # -----------------------------------------------------
+        #     # Re-raise all other HTTP errors so they can be handled
+        #     # by the calling code.
+        #     # -----------------------------------------------------
+
+        #     raise
+
+        # data = response.json()
+
+        #Original
         response = requests.get(
             url,
             params={"content": "true"},
-            timeout=30
+            timeout=10
         )
 
         response.raise_for_status()
@@ -41,158 +82,168 @@ class GreenhouseSource(JobSource):
 
         jobs = []
 
+        cutoff_date = None
+
+        if self.posting_age_days is not None:
+            cutoff_date = (
+                datetime.now(timezone.utc)
+                - timedelta(days=self.posting_age_days)
+            )
+
         for item in data.get("jobs", []):
 
-            title = item.get(
-                "title",
-                ""
-            )
+            if cutoff_date is not None:
 
-            # -----------------------------------------------------
-            # Filter by posting age
-            # -----------------------------------------------------
-
-            if self.posting_age_days is not None:
-
-                first_published = item.get(
-                    "first_published"
+                title = item.get(
+                    "title",
+                    ""
                 )
 
-                if not first_published:
-                    continue
+                # -----------------------------------------------------
+                # Filter by posting age
+                # -----------------------------------------------------
 
-                posting_date = datetime.fromisoformat(
-                    first_published
-                )
+                if self.posting_age_days is not None:
 
-                now = datetime.now(
-                    timezone.utc
-                )
+                    first_published = item.get(
+                        "first_published"
+                    )
 
-                cutoff_date = (
-                    now -
-                    timedelta(
-                        days=self.posting_age_days
+                    if not first_published:
+                        continue
+
+                    posting_date = datetime.fromisoformat(
+                        first_published
+                    )
+
+                    now = datetime.now(
+                        timezone.utc
+                    )
+
+                    cutoff_date = (
+                        now -
+                        timedelta(
+                            days=self.posting_age_days
+                        )
+                    )
+
+                    if posting_date < cutoff_date:
+                        continue
+
+                # -----------------------------------------------------
+                # Description
+                # -----------------------------------------------------
+
+                description = clean_html_description(
+                    item.get(
+                        "content",
+                        ""
                     )
                 )
 
-                if posting_date < cutoff_date:
-                    continue
+                # -----------------------------------------------------
+                # Salary
+                # -----------------------------------------------------
 
-            # -----------------------------------------------------
-            # Description
-            # -----------------------------------------------------
+                salary = extract_salary(
+                    description
+                )
 
-            description = clean_html_description(
-                item.get(
-                    "content",
+                # -----------------------------------------------------
+                # Location
+                # -----------------------------------------------------
+
+                location_data = item.get(
+                    "location",
+                    {}
+                )
+
+                location = location_data.get(
+                    "name",
                     ""
                 )
-            )
 
-            # -----------------------------------------------------
-            # Salary
-            # -----------------------------------------------------
+                # -----------------------------------------------------
+                # Posting URL
+                # -----------------------------------------------------
 
-            salary = extract_salary(
-                description
-            )
-
-            # -----------------------------------------------------
-            # Location
-            # -----------------------------------------------------
-
-            location_data = item.get(
-                "location",
-                {}
-            )
-
-            location = location_data.get(
-                "name",
-                ""
-            )
-
-            # -----------------------------------------------------
-            # Posting URL
-            # -----------------------------------------------------
-
-            posting_url = item.get(
-                "absolute_url",
-                ""
-            )
-
-            # -----------------------------------------------------
-            # Job ID
-            #
-            # Greenhouse provides the job ID directly.
-            # Convert to string so the Job model has a
-            # consistent type across all sources.
-            # -----------------------------------------------------
-
-            job_id = str(
-                item.get(
-                    "id",
+                posting_url = item.get(
+                    "absolute_url",
                     ""
                 )
-            )
 
-            # -----------------------------------------------------
-            # Apply URL
-            #
-            # Greenhouse normally uses the absolute_url as the
-            # application URL as well. If a separate apply URL
-            # is supplied in the response, use it; otherwise
-            # fall back to the posting URL.
-            # -----------------------------------------------------
+                # -----------------------------------------------------
+                # Job ID
+                #
+                # Greenhouse provides the job ID directly.
+                # Convert to string so the Job model has a
+                # consistent type across all sources.
+                # -----------------------------------------------------
 
-            apply_url = item.get(
-                "apply_url",
-                ""
-            )
-
-            if not apply_url:
-                apply_url = posting_url
-
-            # -----------------------------------------------------
-            # Employment Type
-            #
-            # Greenhouse can expose employment type through
-            # metadata/custom fields depending on the board.
-            #
-            # Start with the direct field if available.
-            # Otherwise leave it blank.
-            # -----------------------------------------------------
-
-            employment_type = item.get(
-                "employment_type",
-                ""
-            )
-
-            # -----------------------------------------------------
-            # Create normalized Job object
-            # -----------------------------------------------------
-
-            job = Job(
-                company=self.company_name,
-                title=title,
-                location=location,
-                posting_url=posting_url,
-                description=description,
-                posting_date=(
-                    datetime.fromisoformat(
-                        item["first_published"]
+                job_id = str(
+                    item.get(
+                        "id",
+                        ""
                     )
-                    if item.get("first_published")
-                    else None
-                ),
-                salary=salary,
-                source="Greenhouse",
-                apply_url=apply_url,
-                employment_type=employment_type,
-                job_id=job_id
-            )
+                )
 
-            jobs.append(job)
+                # -----------------------------------------------------
+                # Apply URL
+                #
+                # Greenhouse normally uses the absolute_url as the
+                # application URL as well. If a separate apply URL
+                # is supplied in the response, use it; otherwise
+                # fall back to the posting URL.
+                # -----------------------------------------------------
+
+                apply_url = item.get(
+                    "apply_url",
+                    ""
+                )
+
+                if not apply_url:
+                    apply_url = posting_url
+
+                # -----------------------------------------------------
+                # Employment Type
+                #
+                # Greenhouse can expose employment type through
+                # metadata/custom fields depending on the board.
+                #
+                # Start with the direct field if available.
+                # Otherwise leave it blank.
+                # -----------------------------------------------------
+
+                employment_type = item.get(
+                    "employment_type",
+                    ""
+                )
+
+                # -----------------------------------------------------
+                # Create normalized Job object
+                # -----------------------------------------------------
+
+                job = Job(
+                    company=self.company_name,
+                    title=title,
+                    location=location,
+                    posting_url=posting_url,
+                    description=description,
+                    posting_date=(
+                        datetime.fromisoformat(
+                            item["first_published"]
+                        )
+                        if item.get("first_published")
+                        else None
+                    ),
+                    salary=salary,
+                    source="Greenhouse",
+                    apply_url=apply_url,
+                    employment_type=employment_type,
+                    job_id=job_id
+                )
+
+                jobs.append(job)
 
         return jobs
 
