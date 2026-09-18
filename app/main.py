@@ -424,70 +424,9 @@ async def main():
         f"JobSpy total jobs found: {len(jobspy_jobs)}"
     )
 
-
-    # ---------------------------------------------------------
-    # Create the career-page discovery utility.
-    #
-    # This utility dynamically searches for a company's career
-    # page. It does NOT depend on the existing careers JSON file.
-    #
-    # This is important because JobSpy can return companies that
-    # do not already exist in our known-company database.
-    # ---------------------------------------------------------
-
-    # career_page_finder = CompanyCareersSource()
-    # generic_scraper = GenericCareerScraper()
-
-    # # urls = []
-    # seen_companies = set()
-
-    # for jobspy_job in jobspy_jobs:
-
-    #     company = jobspy_job.company.strip().lower()
-
-    #     # Skip companies we've already processed
-    #     if company in seen_companies:
-    #         continue
-
-    #     seen_companies.add(company)
-
-    #     career_url = career_page_finder.find_careers_page(
-    #        company
-    #     )
-    #     print(f" After find career pagecall in for loop: {career_url}")
-
-    #     try:
-    #         print(f" Before scrape call in for loop: {career_url}")
-    #         company_jobs = generic_scraper.scrape(
-    #             company,
-    #             career_url,
-    #         )
-
-    #         jobs.extend(company_jobs)
-
-
-    #         # jobs.extend(
-    #         #     generic_scraper.scrape(company, career_url)
-    #         # )
-            
-    #         # jobs = generic_scraper.scrape(company, career_url)
-    #         print(f"   Jobs found for company {company}:\n {jobs}\n ")
-    #         print(
-    #             f"{company}: {len(jobs)} jobs found\n"
-    #         )
-
-    #     except Exception as exc:
-    #         print(
-    #             f"ERROR scraping {company}: {exc}"
-    #         )
-
-    # print()
-
-
-
-    # # ------------------------------------------------------------
-    # # Create Built In source ONCE.
-    # # ------------------------------------------------------------
+    # ------------------------------------------------------------
+    # Create Built In source ONCE.
+    # ------------------------------------------------------------
     print(
         "Starting Built-=n job posting search.\n"
     )
@@ -556,56 +495,6 @@ async def main():
     career_pages = load_career_pages()
     scraper = GenericCareerScraper()
 
-    # semaphore = asyncio.Semaphore(10)
-
-    # async def search_company_jobs(company,url):
-
-    #     async with semaphore:
-
-    #         try:
-
-    #             source = GreenhouseSource(
-    #                 company_name=company["name"],
-    #                 board_token=company["board_token"],
-    #                 posting_age_days=config["posting_age_days"],
-    #             )
-
-    #             # Run the synchronous search() in a worker thread.
-    #             companu_jobs = await asyncio.to_thread(
-    #                 scraper.scrape(company, url)
-    #             )
-
-    #             return companu_jobs
-
-    #         except Exception as exc:
-
-    #             print(
-    #                 f"  ERROR searching Greenhouse company "
-    #                 f"{company['name']}: {exc}"
-    #             )
-
-    #             # Return an empty list so one failed company
-    #             # does not prevent the other searches from running.
-    #             return []
-
-
-    #     company_job_results = await asyncio.gather(
-    #     *(
-    #         search_greenhouse_company(company)
-    #         for company in companies.get("greenhouse", [])
-    #     )
-    # )
-
-    #     for company_job in company_job_results:
-    #         print(f"JObs results:  {company_job}")
-    #         # jobs.extend(greenhouse_jobs)
-        
-
-
-
-
-    # career_pages = load_career_pages()
-    # scraper = GenericCareerScraper()
 
     all_jobs = []
 
